@@ -32,7 +32,25 @@ func (p *SentenceProcessor) GetAudio(path string) error {
 		if err := p.AudioDownloader.FetchEN(context.Background(), sentence, translations[i].Text); err != nil {
 			return err
 		}
-		if err := p.AudioDownloader.FetchZH(context.Background(), sentence); err != nil {
+		voice := audio.GetRandomVoiceZH()
+		if err := p.AudioDownloader.FetchWithVoice(context.Background(), sentence, voice); err != nil {
+			return err
+		}
+
+		// generate slow audio with pause between words
+		var paths []string
+		for _, word := range strings.Split(sentence, " ") {
+			path, err := p.AudioDownloader.FetchTmp(
+				context.Background(),
+				word,
+				voice,
+			)
+			if err != nil {
+				fmt.Println(err)
+			}
+			paths = append(paths, path)
+		}
+		if _, err := p.AudioDownloader.JoinAndSaveSlowAudio(sentence, paths); err != nil {
 			return err
 		}
 	}

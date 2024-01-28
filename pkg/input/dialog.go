@@ -45,8 +45,11 @@ func (p *DialogProcessor) GetAudio(path string) error {
 		if err := p.AudioDownloader.FetchEN(context.Background(), dialog.Text, translations[0].Text); err != nil {
 			return err
 		}
+
+		// generate sentences with different speakers
 		voices := audio.GetVoicesZH(dialog.Speakers)
 		var paths []string
+		var slowPaths []string
 		for _, line := range dialog.Lines {
 			voice, ok := voices[line.Speaker]
 			if !ok {
@@ -61,9 +64,30 @@ func (p *DialogProcessor) GetAudio(path string) error {
 				fmt.Println(err)
 			}
 			paths = append(paths, path)
-		}
 
+			// generate slow audio with pause between words
+			var wordPaths []string
+			for _, word := range strings.Split(line.Text, " ") {
+				path, err := p.AudioDownloader.FetchTmp(
+					context.Background(),
+					word,
+					voice,
+				)
+				if err != nil {
+					fmt.Println(err)
+				}
+				wordPaths = append(wordPaths, path)
+			}
+			slowPath, err := p.AudioDownloader.JoinAndSaveSlowAudio(line.Text, wordPaths)
+			if err != nil {
+				return err
+			}
+			slowPaths = append(slowPaths, slowPath)
+		}
 		if err := p.AudioDownloader.JoinAndSaveDialogAudio(dialog.Text, paths); err != nil {
+			return err
+		}
+		if _, err := p.AudioDownloader.JoinAndSaveSlowAudio(dialog.Text, slowPaths); err != nil {
 			return err
 		}
 	}

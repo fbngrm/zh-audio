@@ -15,8 +15,9 @@ import (
 )
 
 type Downloader struct {
-	dirEN string
-	dirZH string
+	dirEN   string
+	dirZH   string
+	dirSlow string
 }
 
 func NewAudioDownloader(dir string) (*Downloader, error) {
@@ -31,9 +32,14 @@ func NewAudioDownloader(dir string) (*Downloader, error) {
 	if err := os.MkdirAll(filepath.Join(dir, "en"), os.ModePerm); err != nil {
 		return nil, err
 	}
+	dirSlow := filepath.Join(dir, "slow")
+	if err := os.MkdirAll(dirSlow, os.ModePerm); err != nil {
+		return nil, err
+	}
 	return &Downloader{
-		dirEN: dirEN,
-		dirZH: dirZH,
+		dirEN:   dirEN,
+		dirZH:   dirZH,
+		dirSlow: dirSlow,
 	}, nil
 }
 
@@ -49,6 +55,10 @@ func (p *Downloader) getOutpathZH(query string) string {
 
 func (p *Downloader) getOutpathEN(query string) string {
 	return filepath.Join(p.dirEN, p.getFilename(query))
+}
+
+func (p *Downloader) getOutpathSlow(query string) string {
+	return filepath.Join(p.dirSlow, p.getFilename(query))
 }
 
 // download audio file from google text-to-speech api if it doesn't exist in cache dir.
@@ -99,6 +109,27 @@ func (p *Downloader) FetchTmp(ctx context.Context, query string, voice *texttosp
 	return tmpFile.Name(), nil
 }
 
+func (p *Downloader) JoinAndSaveSlowAudio(query string, inputPaths []string) (string, error) {
+	outpath := p.getOutpathSlow(query)
+
+	// ffmpeg command to join the MP3 files
+	ffmpegArgs := []string{"-i", "concat:" + strings.Join(inputPaths, "|"), "-c", "copy", "-y", outpath}
+
+	// ffmpeg -i  /tmp/zh/"$${i%.*}_slowed.mp3" -af "apad=pad_dur=1"  /tmp/zh/"$${i%.*}_slowed_silence.mp3"
+
+	// execute the ffmpeg command
+	cmd := exec.Command("ffmpeg", ffmpegArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to join MP3 files: %v", err)
+	}
+
+	fmt.Printf("audio content written to file: %s\n", outpath)
+	return outpath, nil
+}
+
 func (p *Downloader) JoinAndSaveDialogAudio(query string, inputPaths []string) error {
 	outpath := p.getOutpathZH(query)
 
@@ -138,7 +169,7 @@ func fetch(ctx context.Context, query string, voice *texttospeechpb.VoiceSelecti
 		// select the type of audio file you want returned.
 		AudioConfig: &texttospeechpb.AudioConfig{
 			AudioEncoding: texttospeechpb.AudioEncoding_MP3,
-			SpeakingRate:  0.8,
+			SpeakingRate:  0.85,
 		},
 	}
 	return client.SynthesizeSpeech(ctx, &req)
