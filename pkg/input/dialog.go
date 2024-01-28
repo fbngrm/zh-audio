@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/fbngrm/zh-audio/pkg/audio"
+	"github.com/fbngrm/zh-audio/pkg/deepl"
 )
 
 type DialogLine struct {
@@ -25,6 +26,7 @@ type RawDialog struct {
 
 type DialogProcessor struct {
 	AudioDownloader *audio.Downloader
+	Translator      *deepl.Client
 }
 
 func (p *DialogProcessor) GetAudio(path string) error {
@@ -33,6 +35,16 @@ func (p *DialogProcessor) GetAudio(path string) error {
 		return err
 	}
 	for _, dialog := range dialogs {
+		translations, err := p.Translator.Translate([]string{dialog.TextWithOutSpeaker}, 3)
+		if err != nil {
+			return err
+		}
+		if len(translations) == 0 {
+			return fmt.Errorf("translations empty for dialog: %s", dialog.Text)
+		}
+		if err := p.AudioDownloader.FetchEN(context.Background(), dialog.Text, translations[0].Text); err != nil {
+			return err
+		}
 		voices := audio.GetVoicesZH(dialog.Speakers)
 		var paths []string
 		for _, line := range dialog.Lines {
@@ -95,9 +107,7 @@ func (p *DialogProcessor) loadDialogues(path string) ([]RawDialog, error) {
 		speakers[line.Speaker] = struct{}{}
 
 		textWithSpeaker += rawLine
-		textWithSpeaker += "<br>"
 		textWithOutSpeaker += line.Text
-		textWithOutSpeaker += "<br>"
 
 		text += line.Text
 		text += " "
@@ -116,7 +126,7 @@ func (p *DialogProcessor) loadDialogues(path string) ([]RawDialog, error) {
 }
 
 func splitSpeakerAndText(line string) DialogLine {
-	parts := []string{}
+	parts := []string{line}
 	if strings.Contains(line, ":") {
 		parts = strings.Split(line, ":")
 	} else if strings.Contains(line, "：") {
@@ -124,7 +134,7 @@ func splitSpeakerAndText(line string) DialogLine {
 	}
 	if len(parts) == 1 {
 		return DialogLine{
-			"",
+			"A",
 			parts[0],
 		}
 	}

@@ -2,47 +2,55 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/fbngrm/zh-audio/pkg/audio"
+	"github.com/fbngrm/zh-audio/pkg/deepl"
 	"github.com/fbngrm/zh-audio/pkg/input"
 )
 
-var audioDir = "./audio"
-var inPath string
-var t string
+var out = "./out"
+var in string
+var isDialog bool
+var key string
 
 func main() {
-	flag.StringVar(&inPath, "s", "", "source file")
-	flag.StringVar(&t, "type", "s", "type of input [s=sentences|d=dialogs]")
+	apiKey := os.Getenv("DEEPL_API_KEY")
+	if apiKey == "" {
+		log.Fatal("Environment variable DEEPL_API_KEY is not set")
+	}
+	flag.StringVar(&in, "src", "", "source file")
+	flag.BoolVar(&isDialog, "d", false, "is this a dialog input")
 	flag.Parse()
 
-	if inPath == "" {
-		fmt.Println("need input file, spcified with -s path/to/input")
-		os.Exit(1)
+	if in == "" {
+		log.Fatal("need input file, spcified with -s path/to/input")
 	}
 
-	audioDownloader, err := audio.NewAudioDownloader(audioDir)
+	audioDownloader, err := audio.NewAudioDownloader(out)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 
-	if t == "dialogs" {
+	translator := deepl.NewClient(apiKey)
+
+	if isDialog {
 		dialogProcessor := input.DialogProcessor{
 			AudioDownloader: audioDownloader,
+			Translator:      translator,
 		}
-		if err := dialogProcessor.GetAudio(inPath); err != nil {
-			log.Panic(err)
+		if err := dialogProcessor.GetAudio(in); err != nil {
+			log.Fatal(err)
 		}
 		os.Exit(0)
 	}
 
 	sentenceProcessor := input.SentenceProcessor{
 		AudioDownloader: audioDownloader,
+		Translator:      translator,
 	}
-	if err := sentenceProcessor.GetAudio(inPath); err != nil {
-		log.Panic(err)
+	if err := sentenceProcessor.GetAudio(in); err != nil {
+		log.Fatal(err)
 	}
 }

@@ -3,14 +3,17 @@ package input
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/fbngrm/zh-audio/pkg/audio"
+	"github.com/fbngrm/zh-audio/pkg/deepl"
 )
 
 type SentenceProcessor struct {
 	AudioDownloader *audio.Downloader
+	Translator      *deepl.Client
 }
 
 func (p *SentenceProcessor) GetAudio(path string) error {
@@ -18,8 +21,18 @@ func (p *SentenceProcessor) GetAudio(path string) error {
 	if err != nil {
 		return err
 	}
-	for _, sentence := range sentences {
-		if err := p.AudioDownloader.Fetch(context.Background(), sentence); err != nil {
+	translations, err := p.Translator.Translate(sentences, 3)
+	if err != nil {
+		return err
+	}
+	if len(sentences) != len(translations) {
+		return fmt.Errorf("translations mismatch %d:%d", len(sentences), len(translations))
+	}
+	for i, sentence := range sentences {
+		if err := p.AudioDownloader.FetchEN(context.Background(), sentence, translations[i].Text); err != nil {
+			return err
+		}
+		if err := p.AudioDownloader.FetchZH(context.Background(), sentence); err != nil {
 			return err
 		}
 	}
