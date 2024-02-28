@@ -1,21 +1,22 @@
+data_dir=../zh-anki/data/$(src)/$(lesson)/input
 src_zh=./out/zh
 src_slow=./out/slow
 src_en=../en
 dst=./out/concat
 
-.PHONY: d
-d: clean dialogs audio
+.PHONY: dia
+dia: clean cp-dia segment-dia dialogs audio
 
 .PHONY: dialogs
 dialogs:
-	go run cmd/main.go -src $(src) -d
+	go run cmd/main.go -src dialogs -d
 
-.PHONY: s
-s: clean sentences audio
+.PHONY: sen
+sen: clean cp-sen segment-sen sentences audio
 
 .PHONY: sentences
 sentences:
-	go run cmd/main.go -src $(src)
+	go run cmd/main.go -src sentences
 
 .PHONY: audio
 audio:
@@ -28,3 +29,26 @@ audio:
 clean:
 	rm -r /tmp/zh || true
 	mkdir -p /tmp/zh/slow
+	rm -r out || true
+
+.PHONY: segment-sen
+segment-sen:
+	rm /tmp/segmented || true
+	cd ../stanford-segmenter && ./segment.sh pku ../zh-audio/sentences UTF-8 0 > /tmp/segmented
+	cat /tmp/segmented > ../zh-audio/sentences
+	cd -
+
+.PHONY: segment-dia
+segment-dia:
+	cd ../stanford-segmenter
+	cd ../stanford-segmenter && ./segment.sh pku ../zh-audio/dialogs UTF-8 0 > /tmp/segmented
+	cat /tmp/segmented > ../zh-audio/dialogs
+	cd -
+
+.PHONY: cp-sen
+cp-sen:
+	cp $(data_dir)/sentences .
+
+.PHONY: cp-dia
+cp-dia:
+	cp $(data_dir)/dialogues .
