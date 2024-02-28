@@ -39,7 +39,7 @@ func (p *DialogProcessor) GetAudio(path string) error {
 			return err
 		}
 
-		dialogText := strings.ReplaceAll(dialog.Text, " 。", "。")
+		dialogText := strings.ReplaceAll(dialog.Text, "。", "")
 		if err := p.AudioDownloader.FetchEN(context.Background(), dialogText, translation); err != nil {
 			return err
 		}
@@ -53,7 +53,7 @@ func (p *DialogProcessor) GetAudio(path string) error {
 			if !ok {
 				fmt.Printf("could not find voice for speaker: %s\n", line.Speaker)
 			}
-			lineText := strings.ReplaceAll(line.Text, " 。", "。")
+			lineText := strings.ReplaceAll(line.Text, "。", "")
 			path, err := p.AudioDownloader.FetchTmp(
 				context.Background(),
 				lineText,
@@ -69,7 +69,7 @@ func (p *DialogProcessor) GetAudio(path string) error {
 			for _, word := range strings.Split(line.Text, " ") {
 				path, err := p.AudioDownloader.FetchTmp(
 					context.Background(),
-					strings.ReplaceAll(word, " 。", "。"),
+					strings.ReplaceAll(word, "。", ""),
 					voice,
 				)
 				if err != nil {

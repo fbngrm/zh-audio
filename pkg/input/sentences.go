@@ -68,7 +68,7 @@ func (p *SentenceProcessor) loadSentences(path string) ([]string, error) {
 		if sentence == "" {
 			continue
 		}
-		sentence = strings.ReplaceAll(sentence, " 。", "。")
+		sentence = strings.ReplaceAll(sentence, " 。", "")
 		sentences = append(sentences, strings.TrimSpace(sentence))
 	}
 	return append(sentences, sentence), nil
