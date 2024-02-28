@@ -8,12 +8,11 @@ import (
 	"strings"
 
 	"github.com/fbngrm/zh-audio/pkg/audio"
-	"github.com/fbngrm/zh-audio/pkg/deepl"
+	"github.com/fbngrm/zh-audio/pkg/google"
 )
 
 type SentenceProcessor struct {
 	AudioDownloader *audio.Downloader
-	Translator      *deepl.Client
 }
 
 func (p *SentenceProcessor) GetAudio(path string) error {
@@ -21,15 +20,12 @@ func (p *SentenceProcessor) GetAudio(path string) error {
 	if err != nil {
 		return err
 	}
-	translations, err := p.Translator.Translate(sentences, 3)
-	if err != nil {
-		return err
-	}
-	if len(sentences) != len(translations) {
-		return fmt.Errorf("translations mismatch %d:%d", len(sentences), len(translations))
-	}
-	for i, sentence := range sentences {
-		if err := p.AudioDownloader.FetchEN(context.Background(), sentence, translations[i].Text); err != nil {
+	for _, sentence := range sentences {
+		translation, err := google.Translate(sentence)
+		if err != nil {
+			return err
+		}
+		if err := p.AudioDownloader.FetchEN(context.Background(), sentence, translation); err != nil {
 			return err
 		}
 		voice := audio.GetRandomVoiceZH()
@@ -72,6 +68,7 @@ func (p *SentenceProcessor) loadSentences(path string) ([]string, error) {
 		if sentence == "" {
 			continue
 		}
+		sentence = strings.ReplaceAll(sentence, " 。", "。")
 		sentences = append(sentences, strings.TrimSpace(sentence))
 	}
 	return append(sentences, sentence), nil

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/fbngrm/zh-audio/pkg/audio"
-	"github.com/fbngrm/zh-audio/pkg/deepl"
+	"github.com/fbngrm/zh-audio/pkg/google"
 )
 
 type DialogLine struct {
@@ -26,7 +26,6 @@ type RawDialog struct {
 
 type DialogProcessor struct {
 	AudioDownloader *audio.Downloader
-	Translator      *deepl.Client
 }
 
 func (p *DialogProcessor) GetAudio(path string) error {
@@ -35,14 +34,13 @@ func (p *DialogProcessor) GetAudio(path string) error {
 		return err
 	}
 	for _, dialog := range dialogs {
-		translations, err := p.Translator.Translate([]string{dialog.TextWithOutSpeaker}, 3)
+		translation, err := google.Translate(dialog.Text)
 		if err != nil {
 			return err
 		}
-		if len(translations) == 0 {
-			return fmt.Errorf("translations empty for dialog: %s", dialog.Text)
-		}
-		if err := p.AudioDownloader.FetchEN(context.Background(), dialog.Text, translations[0].Text); err != nil {
+
+		dialogText := strings.ReplaceAll(dialog.Text, " 。", "。")
+		if err := p.AudioDownloader.FetchEN(context.Background(), dialogText, translation); err != nil {
 			return err
 		}
 
@@ -55,9 +53,10 @@ func (p *DialogProcessor) GetAudio(path string) error {
 			if !ok {
 				fmt.Printf("could not find voice for speaker: %s\n", line.Speaker)
 			}
+			lineText := strings.ReplaceAll(line.Text, " 。", "。")
 			path, err := p.AudioDownloader.FetchTmp(
 				context.Background(),
-				line.Text,
+				lineText,
 				voice,
 			)
 			if err != nil {
@@ -70,7 +69,7 @@ func (p *DialogProcessor) GetAudio(path string) error {
 			for _, word := range strings.Split(line.Text, " ") {
 				path, err := p.AudioDownloader.FetchTmp(
 					context.Background(),
-					word,
+					strings.ReplaceAll(word, " 。", "。"),
 					voice,
 				)
 				if err != nil {
@@ -78,16 +77,16 @@ func (p *DialogProcessor) GetAudio(path string) error {
 				}
 				wordPaths = append(wordPaths, path)
 			}
-			slowPath, err := p.AudioDownloader.JoinAndSaveSlowAudio(line.Text, wordPaths)
+			slowPath, err := p.AudioDownloader.JoinAndSaveSlowAudio(lineText, wordPaths)
 			if err != nil {
 				return err
 			}
 			slowPaths = append(slowPaths, slowPath)
 		}
-		if err := p.AudioDownloader.JoinAndSaveDialogAudio(dialog.Text, paths); err != nil {
+		if err := p.AudioDownloader.JoinAndSaveDialogAudio(dialogText, paths); err != nil {
 			return err
 		}
-		if _, err := p.AudioDownloader.JoinAndSaveSlowAudio(dialog.Text, slowPaths); err != nil {
+		if _, err := p.AudioDownloader.JoinAndSaveSlowAudio(dialogText, slowPaths); err != nil {
 			return err
 		}
 	}

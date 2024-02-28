@@ -45,7 +45,7 @@ func NewAudioDownloader(dir string) (*Downloader, error) {
 
 func (p *Downloader) getFilename(query string) string {
 	query = strings.ReplaceAll(query, " ", "")
-	limit := math.Min(float64(len(query)), 300.0) // note: possible collisions
+	limit := math.Min(float64(len(query)), 251.0) // note: possible collisions
 	return query[:int(limit)] + ".mp3"
 }
 
@@ -61,7 +61,7 @@ func (p *Downloader) getOutpathSlow(query string) string {
 	return filepath.Join(p.dirSlow, p.getFilename(query))
 }
 
-// download audio file from google text-to-speech api if it doesn't exist in cache dir.
+// download audio file from google text-to-speech api.
 func (p *Downloader) FetchZH(ctx context.Context, query string) error {
 	return p.FetchWithVoice(ctx, query, GetRandomVoiceZH())
 }
@@ -115,9 +115,6 @@ func (p *Downloader) JoinAndSaveSlowAudio(query string, inputPaths []string) (st
 	// ffmpeg command to join the MP3 files
 	ffmpegArgs := []string{"-i", "concat:" + strings.Join(inputPaths, "|"), "-c", "copy", "-y", outpath}
 
-	// ffmpeg -i  /tmp/zh/"$${i%.*}_slowed.mp3" -af "apad=pad_dur=1"  /tmp/zh/"$${i%.*}_slowed_silence.mp3"
-
-	// execute the ffmpeg command
 	cmd := exec.Command("ffmpeg", ffmpegArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -136,7 +133,6 @@ func (p *Downloader) JoinAndSaveDialogAudio(query string, inputPaths []string) e
 	// ffmpeg command to join the MP3 files
 	ffmpegArgs := []string{"-i", "concat:" + strings.Join(inputPaths, "|"), "-c", "copy", "-y", outpath}
 
-	// execute the ffmpeg command
 	cmd := exec.Command("ffmpeg", ffmpegArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -157,19 +153,19 @@ func fetch(ctx context.Context, query string, voice *texttospeechpb.VoiceSelecti
 	defer client.Close()
 
 	// perform the text-to-speech request on the text input with the selected
-	// voice parameters and audio file type.
+	// voice parameters and audio file type
 	req := texttospeechpb.SynthesizeSpeechRequest{
-		// set the text input to be synthesized.
+		// set the text input to be synthesized
 		Input: &texttospeechpb.SynthesisInput{
 			InputSource: &texttospeechpb.SynthesisInput_Text{Text: query},
 		},
 		// build the voice request, select the language code ("en-US") and the SSML
-		// voice gender ("neutral").
+		// voice gender ("neutral")
 		Voice: voice,
 		// select the type of audio file you want returned.
 		AudioConfig: &texttospeechpb.AudioConfig{
 			AudioEncoding: texttospeechpb.AudioEncoding_MP3,
-			SpeakingRate:  0.85,
+			SpeakingRate:  0.80,
 		},
 	}
 	return client.SynthesizeSpeech(ctx, &req)
