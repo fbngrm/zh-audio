@@ -13,6 +13,7 @@ var out = "./out"
 var in string
 var isDialog bool
 var key string
+var ignoreChars = []string{"!", "！", "？", "?", "，", ",", ".", "。", "", " ", "、"}
 
 func main() {
 	flag.StringVar(&in, "src", "", "source file")
@@ -23,25 +24,42 @@ func main() {
 		log.Fatal("need input file, spcified with -src path/to/input")
 	}
 
-	audioDownloader, err := audio.NewAudioDownloader(out)
+	azureApiKey := os.Getenv("SPEECH_KEY")
+	if azureApiKey == "" {
+		log.Fatal("Environment variable SPEECH_KEY is not set")
+	}
+	azureClient, err := audio.NewAzureClient(azureApiKey, out, ignoreChars)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gcpClient, err := audio.NewGCPClient(out)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if isDialog {
 		dialogProcessor := input.DialogProcessor{
-			AudioDownloader: audioDownloader,
+			GCPDownloader:   gcpClient,
+			AzureDownloader: azureClient,
 		}
-		if err := dialogProcessor.GetAudio(in); err != nil {
+		// if err := dialogProcessor.GetGCPAudio(in); err != nil {
+		// 	log.Fatal(err)
+		// }
+		if err := dialogProcessor.GetAzureAudio(in); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)
 	}
 
 	sentenceProcessor := input.SentenceProcessor{
-		AudioDownloader: audioDownloader,
+		GCPDownloader:   gcpClient,
+		AzureDownloader: azureClient,
 	}
-	if err := sentenceProcessor.GetAudio(in); err != nil {
+	if err := sentenceProcessor.GetAzureAudio(in); err != nil {
 		log.Fatal(err)
 	}
+	// if err := sentenceProcessor.GetGCPAudio(in); err != nil {
+	// 	log.Fatal(err)
+	// }
 }

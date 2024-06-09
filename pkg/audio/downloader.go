@@ -14,13 +14,13 @@ import (
 	"cloud.google.com/go/texttospeech/apiv1/texttospeechpb"
 )
 
-type Downloader struct {
+type GCPDownloader struct {
 	dirEN   string
 	dirZH   string
 	dirSlow string
 }
 
-func NewAudioDownloader(dir string) (*Downloader, error) {
+func NewGCPClient(dir string) (*GCPDownloader, error) {
 	if err := os.RemoveAll(dir); err != nil {
 		return nil, err
 	}
@@ -36,63 +36,63 @@ func NewAudioDownloader(dir string) (*Downloader, error) {
 	if err := os.MkdirAll(dirSlow, os.ModePerm); err != nil {
 		return nil, err
 	}
-	return &Downloader{
+	return &GCPDownloader{
 		dirEN:   dirEN,
 		dirZH:   dirZH,
 		dirSlow: dirSlow,
 	}, nil
 }
 
-func (p *Downloader) getFilename(query string) string {
+func (p *GCPDownloader) GetFilename(query string) string {
 	query = strings.ReplaceAll(query, " ", "")
-	limit := math.Min(float64(len(query)), 251.0) // note: possible collisions
+	limit := math.Min(float64(len(query)), 150.0) // note: possible collisions
 	return query[:int(limit)] + ".mp3"
 }
 
-func (p *Downloader) getOutpathZH(query string) string {
-	return filepath.Join(p.dirZH, p.getFilename(query))
+func (p *GCPDownloader) GetOutpathZH(query string) string {
+	return filepath.Join(p.dirZH, p.GetFilename(query))
 }
 
-func (p *Downloader) getOutpathEN(query string) string {
-	return filepath.Join(p.dirEN, p.getFilename(query))
+func (p *GCPDownloader) GetOutpathEN(query string) string {
+	return filepath.Join(p.dirEN, p.GetFilename(query))
 }
 
-func (p *Downloader) getOutpathSlow(query string) string {
-	return filepath.Join(p.dirSlow, p.getFilename(query))
+func (p *GCPDownloader) getOutpathSlow(query string) string {
+	return filepath.Join(p.dirSlow, p.GetFilename(query))
 }
 
 // download audio file from google text-to-speech api.
-func (p *Downloader) FetchZH(ctx context.Context, query string) error {
+func (p *GCPDownloader) FetchZH(ctx context.Context, query string) error {
 	return p.FetchWithVoice(ctx, query, GetRandomVoiceZH())
 }
 
-func (p *Downloader) FetchEN(ctx context.Context, queryZH, query string) error {
+func (p *GCPDownloader) FetchEN(ctx context.Context, queryZH, query string) error {
 	resp, err := fetch(ctx, query, GetRandomVoiceEN())
 	if err != nil {
 		return err
 	}
 	// the resp's AudioContent is binary
-	err = ioutil.WriteFile(p.getOutpathEN(queryZH), resp.AudioContent, os.ModePerm)
+	err = ioutil.WriteFile(p.GetOutpathEN(queryZH), resp.AudioContent, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *Downloader) FetchWithVoice(ctx context.Context, query string, voice *texttospeechpb.VoiceSelectionParams) error {
+func (p *GCPDownloader) FetchWithVoice(ctx context.Context, query string, voice *texttospeechpb.VoiceSelectionParams) error {
 	resp, err := fetch(ctx, query, voice)
 	if err != nil {
 		return err
 	}
 	// the resp's AudioContent is binary
-	err = ioutil.WriteFile(p.getOutpathZH(query), resp.AudioContent, os.ModePerm)
+	err = ioutil.WriteFile(p.GetOutpathZH(query), resp.AudioContent, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *Downloader) FetchTmp(ctx context.Context, query string, voice *texttospeechpb.VoiceSelectionParams,
+func (p *GCPDownloader) FetchTmp(ctx context.Context, query string, voice *texttospeechpb.VoiceSelectionParams,
 ) (string, error) {
 	tmpFile, err := os.CreateTemp("", "zh")
 	if err != nil {
@@ -109,7 +109,7 @@ func (p *Downloader) FetchTmp(ctx context.Context, query string, voice *texttosp
 	return tmpFile.Name(), nil
 }
 
-func (p *Downloader) JoinAndSaveSlowAudio(query string, inputPaths []string) (string, error) {
+func (p *GCPDownloader) JoinAndSaveSlowAudio(query string, inputPaths []string) (string, error) {
 	outpath := p.getOutpathSlow(query)
 
 	// ffmpeg command to join the MP3 files
@@ -127,8 +127,8 @@ func (p *Downloader) JoinAndSaveSlowAudio(query string, inputPaths []string) (st
 	return outpath, nil
 }
 
-func (p *Downloader) JoinAndSaveDialogAudio(query string, inputPaths []string) error {
-	outpath := p.getOutpathZH(query)
+func (p *GCPDownloader) JoinAndSaveDialogAudio(query string, inputPaths []string) error {
+	outpath := p.GetOutpathZH(query)
 
 	// ffmpeg command to join the MP3 files
 	ffmpegArgs := []string{"-i", "concat:" + strings.Join(inputPaths, "|"), "-c", "copy", "-y", outpath}

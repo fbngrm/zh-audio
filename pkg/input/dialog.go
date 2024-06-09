@@ -25,10 +25,52 @@ type RawDialog struct {
 }
 
 type DialogProcessor struct {
-	AudioDownloader *audio.Downloader
+	GCPDownloader   *audio.GCPDownloader
+	AzureDownloader *audio.AzureClient
 }
 
-func (p *DialogProcessor) GetAudio(path string) error {
+func (p *DialogProcessor) GetAzureAudio(path string) error {
+	dialogs, err := p.loadDialogues(path)
+	if err != nil {
+		return err
+	}
+	for _, dialog := range dialogs {
+		translation, err := google.Translate(dialog.Text)
+		if err != nil {
+			return err
+		}
+		dialogText := strings.ReplaceAll(dialog.Text, "。", "")
+		if err := p.GCPDownloader.FetchEN(context.Background(), dialogText, translation); err != nil {
+			return err
+		}
+		var query string
+		if len(dialog.Speakers) != 0 {
+			query = p.prepareQuery(dialog)
+		} else {
+			query = p.AzureDownloader.PrepareQueryWithRandomVoice(dialogText, false)
+		}
+
+		if err := p.AzureDownloader.Fetch(context.Background(), query, p.GCPDownloader.GetFilename(dialogText), true); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *DialogProcessor) prepareQuery(dialog RawDialog) string {
+	query := ""
+	voices := p.AzureDownloader.GetVoices(dialog.Speakers)
+	for _, line := range dialog.Lines {
+		voice, ok := voices[line.Speaker]
+		if !ok {
+			fmt.Printf("could not find voice for speaker: %s\n", line.Speaker)
+		}
+		query += p.AzureDownloader.PrepareQuery(line.Text, voice, false)
+	}
+	return query
+}
+
+func (p *DialogProcessor) GetGCPAudio(path string) error {
 	dialogs, err := p.loadDialogues(path)
 	if err != nil {
 		return err
@@ -40,7 +82,7 @@ func (p *DialogProcessor) GetAudio(path string) error {
 		}
 
 		dialogText := strings.ReplaceAll(dialog.Text, "。", "")
-		if err := p.AudioDownloader.FetchEN(context.Background(), dialogText, translation); err != nil {
+		if err := p.GCPDownloader.FetchEN(context.Background(), dialogText, translation); err != nil {
 			return err
 		}
 
@@ -54,7 +96,7 @@ func (p *DialogProcessor) GetAudio(path string) error {
 				fmt.Printf("could not find voice for speaker: %s\n", line.Speaker)
 			}
 			lineText := strings.ReplaceAll(line.Text, "。", "")
-			path, err := p.AudioDownloader.FetchTmp(
+			path, err := p.GCPDownloader.FetchTmp(
 				context.Background(),
 				lineText,
 				voice,
@@ -67,7 +109,7 @@ func (p *DialogProcessor) GetAudio(path string) error {
 			// generate slow audio with pause between words
 			var wordPaths []string
 			for _, word := range strings.Split(line.Text, " ") {
-				path, err := p.AudioDownloader.FetchTmp(
+				path, err := p.GCPDownloader.FetchTmp(
 					context.Background(),
 					strings.ReplaceAll(word, "。", ""),
 					voice,
@@ -77,16 +119,16 @@ func (p *DialogProcessor) GetAudio(path string) error {
 				}
 				wordPaths = append(wordPaths, path)
 			}
-			slowPath, err := p.AudioDownloader.JoinAndSaveSlowAudio(lineText, wordPaths)
+			slowPath, err := p.GCPDownloader.JoinAndSaveSlowAudio(lineText, wordPaths)
 			if err != nil {
 				return err
 			}
 			slowPaths = append(slowPaths, slowPath)
 		}
-		if err := p.AudioDownloader.JoinAndSaveDialogAudio(dialogText, paths); err != nil {
+		if err := p.GCPDownloader.JoinAndSaveDialogAudio(dialogText, paths); err != nil {
 			return err
 		}
-		if _, err := p.AudioDownloader.JoinAndSaveSlowAudio(dialogText, slowPaths); err != nil {
+		if _, err := p.GCPDownloader.JoinAndSaveSlowAudio(dialogText, slowPaths); err != nil {
 			return err
 		}
 	}

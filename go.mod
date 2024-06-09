@@ -5,6 +5,7 @@ go 1.20
 require (
 	cloud.google.com/go/texttospeech v1.7.4
 	cloud.google.com/go/translate v1.10.1
+	golang.org/x/exp v0.0.0-20240604190554-fc45aab8b7f8
 	golang.org/x/text v0.14.0
 )
 
@@ -31,7 +32,7 @@ require (
 	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/api v0.160.0 // indirect

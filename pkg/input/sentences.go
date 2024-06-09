@@ -12,10 +12,11 @@ import (
 )
 
 type SentenceProcessor struct {
-	AudioDownloader *audio.Downloader
+	GCPDownloader   *audio.GCPDownloader
+	AzureDownloader *audio.AzureClient
 }
 
-func (p *SentenceProcessor) GetAudio(path string) error {
+func (p *SentenceProcessor) GetAzureAudio(path string) error {
 	sentences, err := p.loadSentences(path)
 	if err != nil {
 		return err
@@ -25,18 +26,40 @@ func (p *SentenceProcessor) GetAudio(path string) error {
 		if err != nil {
 			return err
 		}
-		if err := p.AudioDownloader.FetchEN(context.Background(), sentence, translation); err != nil {
+		if err := p.GCPDownloader.FetchEN(context.Background(), sentence, translation); err != nil {
+			return err
+		}
+
+		query := p.AzureDownloader.PrepareQueryWithRandomVoice(sentence, true)
+		if err := p.AzureDownloader.Fetch(context.Background(), query, p.GCPDownloader.GetFilename(sentence), true); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *SentenceProcessor) GetGCPAudio(path string) error {
+	sentences, err := p.loadSentences(path)
+	if err != nil {
+		return err
+	}
+	for _, sentence := range sentences {
+		translation, err := google.Translate(sentence)
+		if err != nil {
+			return err
+		}
+		if err := p.GCPDownloader.FetchEN(context.Background(), sentence, translation); err != nil {
 			return err
 		}
 		voice := audio.GetRandomVoiceZH()
-		if err := p.AudioDownloader.FetchWithVoice(context.Background(), sentence, voice); err != nil {
+		if err := p.GCPDownloader.FetchWithVoice(context.Background(), sentence, voice); err != nil {
 			return err
 		}
 
 		// generate slow audio with pause between words
 		var paths []string
 		for _, word := range strings.Split(sentence, " ") {
-			path, err := p.AudioDownloader.FetchTmp(
+			path, err := p.GCPDownloader.FetchTmp(
 				context.Background(),
 				word,
 				voice,
@@ -46,7 +69,7 @@ func (p *SentenceProcessor) GetAudio(path string) error {
 			}
 			paths = append(paths, path)
 		}
-		if _, err := p.AudioDownloader.JoinAndSaveSlowAudio(sentence, paths); err != nil {
+		if _, err := p.GCPDownloader.JoinAndSaveSlowAudio(sentence, paths); err != nil {
 			return err
 		}
 	}
