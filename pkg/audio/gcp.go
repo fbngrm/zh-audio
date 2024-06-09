@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -45,8 +44,14 @@ func NewGCPClient(dir string) (*GCPDownloader, error) {
 
 func (p *GCPDownloader) GetFilename(query string) string {
 	query = strings.ReplaceAll(query, " ", "")
-	limit := math.Min(float64(len(query)), 150.0) // note: possible collisions
-	return query[:int(limit)] + ".mp3"
+	filename := ""
+	for _, c := range query {
+		filename += string(c)
+		if len(filename) >= 150 { // possible collisions
+			break
+		}
+	}
+	return filename + ".mp3"
 }
 
 func (p *GCPDownloader) GetOutpathZH(query string) string {
