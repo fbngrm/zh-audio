@@ -11,13 +11,15 @@ import (
 
 var out = "./out"
 var in string
-var isDialog bool
+var isDialog, isSentences, isPatterns bool
 var key string
 var ignoreChars = []string{"!", "！", "？", "?", "，", ",", ".", "。", "", " ", "、"}
 
 func main() {
 	flag.StringVar(&in, "src", "", "source file")
 	flag.BoolVar(&isDialog, "d", false, "is this a dialog input")
+	flag.BoolVar(&isPatterns, "p", false, "is this a pattern input")
+	flag.BoolVar(&isSentences, "s", false, "is this a sentence input")
 	flag.Parse()
 
 	if in == "" {
@@ -51,13 +53,22 @@ func main() {
 		}
 		os.Exit(0)
 	}
-
-	sentenceProcessor := input.SentenceProcessor{
-		GCPDownloader:   gcpClient,
-		AzureDownloader: azureClient,
+	if isSentences {
+		sentenceProcessor := input.SentenceProcessor{
+			GCPDownloader:   gcpClient,
+			AzureDownloader: azureClient,
+		}
+		if err := sentenceProcessor.GetAzureAudio(in); err != nil {
+			log.Fatal(err)
+		}
 	}
-	if err := sentenceProcessor.GetAzureAudio(in); err != nil {
-		log.Fatal(err)
+	if isPatterns {
+		patternProcessor := input.PatternProcessor{
+			AzureDownloader: azureClient,
+		}
+		if err := patternProcessor.GetAzureAudio(in); err != nil {
+			log.Fatal(err)
+		}
 	}
 	// if err := sentenceProcessor.GetGCPAudio(in); err != nil {
 	// 	log.Fatal(err)

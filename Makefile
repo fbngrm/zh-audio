@@ -17,11 +17,15 @@ dialogs:
 cp-s: cp-sen s
 
 .PHONY: s
-s: clean segment-sen sentences audio
+s: clean sentences
 
 .PHONY: sentences
 sentences:
-	go run cmd/main.go -src sentences
+	go run cmd/main.go -src sentences -s
+
+.PHONY: p
+p: clean 
+	go run cmd/main.go -src patterns -p
 
 .PHONY: audio
 audio:

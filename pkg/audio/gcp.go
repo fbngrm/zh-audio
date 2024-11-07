@@ -42,7 +42,7 @@ func NewGCPClient(dir string) (*GCPDownloader, error) {
 	}, nil
 }
 
-func (p *GCPDownloader) GetFilename(query string) string {
+func GetFilename(query string) string {
 	query = strings.ReplaceAll(query, " ", "")
 	filename := ""
 	for _, c := range query {
@@ -55,15 +55,15 @@ func (p *GCPDownloader) GetFilename(query string) string {
 }
 
 func (p *GCPDownloader) GetOutpathZH(query string) string {
-	return filepath.Join(p.dirZH, p.GetFilename(query))
+	return filepath.Join(p.dirZH, GetFilename(query))
 }
 
 func (p *GCPDownloader) GetOutpathEN(query string) string {
-	return filepath.Join(p.dirEN, p.GetFilename(query))
+	return filepath.Join(p.dirEN, GetFilename(query))
 }
 
 func (p *GCPDownloader) getOutpathSlow(query string) string {
-	return filepath.Join(p.dirSlow, p.GetFilename(query))
+	return filepath.Join(p.dirSlow, GetFilename(query))
 }
 
 // download audio file from google text-to-speech api.

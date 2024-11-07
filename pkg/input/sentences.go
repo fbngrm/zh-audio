@@ -30,8 +30,17 @@ func (p *SentenceProcessor) GetAzureAudio(path string) error {
 			return err
 		}
 
-		query := p.AzureDownloader.PrepareQueryWithRandomVoice(sentence, true)
-		if err := p.AzureDownloader.Fetch(context.Background(), query, p.GCPDownloader.GetFilename(sentence), true); err != nil {
+		// Use for single words
+		// if err := p.GCPDownloader.FetchWithVoice(context.Background(), sentence, audio.VoicesZH[2]); err != nil {
+		// 	return err
+		// }
+
+		query := p.AzureDownloader.PrepareQueryWithRandomVoice(sentence, "0.0", true)
+		if err := p.AzureDownloader.Fetch(
+			context.Background(),
+			query,
+			audio.GetFilename(sentence),
+			true); err != nil {
 			return err
 		}
 	}

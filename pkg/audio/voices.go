@@ -26,7 +26,7 @@ var voicesEN = []*texttospeechpb.VoiceSelectionParams{
 }
 
 // we support 4 different voices only
-var voicesZH = []*texttospeechpb.VoiceSelectionParams{
+var VoicesZH = []*texttospeechpb.VoiceSelectionParams{
 	{
 		LanguageCode: "cmn-CN",
 		Name:         "cmn-CN-Wavenet-C",
@@ -53,7 +53,7 @@ func GetVoicesZH(speakers map[string]struct{}) map[string]*texttospeechpb.VoiceS
 	v := make(map[string]*texttospeechpb.VoiceSelectionParams)
 	var i int
 	for speaker := range speakers {
-		v[speaker] = voicesZH[i]
+		v[speaker] = VoicesZH[i]
 		i++
 	}
 	return v
@@ -61,7 +61,7 @@ func GetVoicesZH(speakers map[string]struct{}) map[string]*texttospeechpb.VoiceS
 
 func GetRandomVoiceZH() *texttospeechpb.VoiceSelectionParams {
 	rand.Seed(time.Now().UnixNano()) // initialize global pseudo random generator
-	return voicesZH[rand.Intn(len(voicesZH))]
+	return VoicesZH[rand.Intn(len(VoicesZH))]
 }
 
 func GetRandomVoiceEN() *texttospeechpb.VoiceSelectionParams {

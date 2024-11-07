@@ -43,11 +43,11 @@ func NewAzureClient(apiKey, dir string, ignoreChars []string) (*AzureClient, err
 
 // we support 4 different voices only
 var Voices = []string{
-	"zh-CN-YunzeNeural",
-	"zh-CN-XiaobeiNeural",
-	"zh-CN-YunjieNeural",
-	"zh-CN-XiaochenNeural",
-	"zh-CN-XiaohanNeural",
+	"zh-CN-XiaoxiaoNeural", // female
+	"zh-CN-YunjianNeural",  // male
+	"zh-CN-XiaochenNeural", // female
+	// "zh-CN-YinyangNeural",  // male / broken
+	"zh-CN-YunyiMultilingualNeural", // male
 }
 
 func (c *AzureClient) GetRandomVoice() string {
@@ -125,27 +125,40 @@ func (c *AzureClient) fetch(ctx context.Context, text string, retryCount int) (*
 	return resp, nil
 }
 
-func (c *AzureClient) PrepareQueryWithRandomVoice(text string, addSplitAudio bool) string {
+func (c *AzureClient) PrepareQueryWithRandomVoice(text, pause string, addSplitAudio bool) string {
 	speaker := c.GetRandomVoice()
-	slog.Debug("prepare azure query", "voice", speaker, "text", text)
-	return c.PrepareQuery(text, speaker, addSplitAudio)
+	return c.PrepareQuery(text, speaker, pause, addSplitAudio)
 }
 
-// if text contains whitespaces and addSplitAudio is true, text is added twice, once with all
-// whitespaces stipped off and once with whitespaces. azure api renders whitespaces as pauses in the audio.
-func (c *AzureClient) PrepareQuery(text, speaker string, addSplitAudio bool) string {
-	slog.Debug("prepare azure query", "voice", speaker, "text", text)
+func (c *AzureClient) PrepareEnglishQuery(text, pause string) string {
+	speaker := "en-US-AvaMultilingualNeural"
+	slog.Debug("prepare azure en query", "voice", speaker, "text", text)
 	queryFmt := `
     <voice name="%s">
+        <mstts:silence  type="Tailing-exact" value="%s"/>
+        <mstts:silence type="semicolon-exact" value="500ms"/>
         <prosody rate="%s">
 		    %s
         </prosody>
     </voice>`
-	query := fmt.Sprintf(queryFmt, speaker, rate, strings.ReplaceAll(text, " ", ""))
+	return fmt.Sprintf(queryFmt, speaker, pause, "1.0", text)
+}
+
+// if text contains whitespaces and addSplitAudio is true, text is added twice, once with all
+// whitespaces stipped off and once with whitespaces. azure api renders whitespaces as pauses in the audio.
+func (c *AzureClient) PrepareQuery(text, speaker, pause string, addSplitAudio bool) string {
+	slog.Debug("prepare azure query", "voice", speaker, "text", text)
+	queryFmt := `
+    <voice name="%s">
+        <mstts:silence  type="Tailing-exact" value="%s"/>
+        <prosody rate="%s">
+		    %s
+        </prosody>
+    </voice>`
+	query := fmt.Sprintf(queryFmt, speaker, pause, rate, strings.ReplaceAll(text, " ", ""))
 	if addSplitAudio {
 		query += fmt.Sprintf(queryFmt, speaker, rate, text)
 	}
-
 	return query
 }
 

@@ -47,10 +47,10 @@ func (p *DialogProcessor) GetAzureAudio(path string) error {
 		if len(dialog.Speakers) != 0 {
 			query = p.prepareQuery(dialog)
 		} else {
-			query = p.AzureDownloader.PrepareQueryWithRandomVoice(dialogText, false)
+			query = p.AzureDownloader.PrepareQueryWithRandomVoice(dialogText, "0.0", false)
 		}
 
-		if err := p.AzureDownloader.Fetch(context.Background(), query, p.GCPDownloader.GetFilename(dialogText), true); err != nil {
+		if err := p.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(dialogText), true); err != nil {
 			return err
 		}
 	}
@@ -65,7 +65,7 @@ func (p *DialogProcessor) prepareQuery(dialog RawDialog) string {
 		if !ok {
 			fmt.Printf("could not find voice for speaker: %s\n", line.Speaker)
 		}
-		query += p.AzureDownloader.PrepareQuery(line.Text, voice, false)
+		query += p.AzureDownloader.PrepareQuery(line.Text, voice, "0.0", false)
 	}
 	return query
 }
