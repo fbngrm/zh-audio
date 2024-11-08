@@ -157,7 +157,7 @@ func (c *AzureClient) PrepareQuery(text, speaker, pause string, addSplitAudio bo
     </voice>`
 	query := fmt.Sprintf(queryFmt, speaker, pause, rate, strings.ReplaceAll(text, " ", ""))
 	if addSplitAudio {
-		query += fmt.Sprintf(queryFmt, speaker, rate, text)
+		query += fmt.Sprintf(queryFmt, speaker, pause, rate, text)
 	}
 	return query
 }
