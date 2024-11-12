@@ -1,10 +1,10 @@
-data_dir=../zh-anki/data/$(src)/$(lesson)/input
+data_dir=../zh-anki/data/$(src)/$(lesson)
 src_zh=./out/zh
 src_en=../en
 dst=./out/concat
 
 .PHONY: cp-d
-cp-d: cp-dia d
+cp-d: cp-dia segment-dia d
 
 .PHONY: d
 d: clean segment-dia dialogs audio
@@ -14,7 +14,7 @@ dialogs:
 	go run cmd/main.go -src dialogs -d
 
 .PHONY: cp-s
-cp-s: cp-sen s
+cp-s: cp-sen segment-sen s
 
 .PHONY: s
 s: clean sentences
@@ -23,8 +23,15 @@ s: clean sentences
 sentences:
 	go run cmd/main.go -src sentences -s
 
+.PHONY: cp-c
+cp-d: cp-clo c
+
+.PHONY: c
+c: clean
+	go run cmd/main.go -src clozes.json -c
+
 .PHONY: p
-p: clean 
+p: clean
 	go run cmd/main.go -src patterns -p
 
 .PHONY: audio
@@ -55,8 +62,12 @@ segment-dia:
 
 .PHONY: cp-sen
 cp-sen:
-	cp $(data_dir)/sentences .
+	cp $(data_dir)/input/sentences .
 
 .PHONY: cp-dia
 cp-dia:
-	cp $(data_dir)/dialogues .
+	cp $(data_dir)/input/dialogues .
+
+.PHONY: cp-clo
+cp-clo:
+	cp $(data_dir)/output/clozes.json .
