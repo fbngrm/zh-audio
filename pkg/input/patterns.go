@@ -28,7 +28,8 @@ func (p *PatternProcessor) replaceTextWithAudio(text, pause string) string {
 
 	// Replace Chinese text with audio
 	text = chineseRe.ReplaceAllStringFunc(text, func(chineseText string) string {
-		audio := p.AzureDownloader.PrepareQuery(chineseText, "zh-CN-XiaochenNeural", pause, false)
+		// audio := p.AzureDownloader.PrepareQuery(chineseText, "zh-CN-XiaochenNeural", pause, false)
+		audio := p.AzureDownloader.PrepareQueryWithRandomVoice(chineseText, pause, false)
 		return audio
 	})
 
