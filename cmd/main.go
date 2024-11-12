@@ -11,7 +11,7 @@ import (
 
 var out = "./out"
 var in string
-var isDialog, isSentences, isPatterns bool
+var isDialog, isSentences, isPatterns, isClozes bool
 var key string
 var ignoreChars = []string{"!", "！", "？", "?", "，", ",", ".", "。", "", " ", "、"}
 
@@ -20,6 +20,7 @@ func main() {
 	flag.BoolVar(&isDialog, "d", false, "is this a dialog input")
 	flag.BoolVar(&isPatterns, "p", false, "is this a pattern input")
 	flag.BoolVar(&isSentences, "s", false, "is this a sentence input")
+	flag.BoolVar(&isClozes, "c", false, "is this a cloze input")
 	flag.Parse()
 
 	if in == "" {
@@ -67,6 +68,14 @@ func main() {
 			AzureDownloader: azureClient,
 		}
 		if err := patternProcessor.GetAzureAudio(in); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if isClozes {
+		clozesProcessor := input.ClozeProcessor{
+			AzureDownloader: azureClient,
+		}
+		if err := clozesProcessor.GetAzureAudio(in); err != nil {
 			log.Fatal(err)
 		}
 	}
