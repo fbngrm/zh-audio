@@ -16,7 +16,7 @@ import (
 )
 
 // speed
-const rate = "0.8"
+const rate = "0.7"
 
 type AzureClient struct {
 	endpoint    string
@@ -136,7 +136,6 @@ func (c *AzureClient) PrepareEnglishQuery(text, pause string) string {
 	queryFmt := `
     <voice name="%s">
         <mstts:silence  type="Tailing-exact" value="%s"/>
-        <mstts:silence type="semicolon-exact" value="500ms"/>
         <prosody rate="%s">
 		    %s
         </prosody>
