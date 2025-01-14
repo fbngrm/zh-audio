@@ -3,6 +3,16 @@ src_zh=./out/zh
 src_en=../en
 dst=./out/concat
 
+.PHONY: cp-w
+cp-w: cp-w w
+
+.PHONY: w
+w: clean words
+
+.PHONY: words
+words:
+	go run cmd/main.go -src words.json -w
+
 .PHONY: cp-d
 cp-d: cp-dia segment-dia d
 
@@ -34,11 +44,9 @@ c: clean
 p: clean
 	go run cmd/main.go -src patterns -p
 
-.PHONY: audio
-audio:
-	mkdir -p $(dst)
-	cd $(src_zh); for i in *.mp3; do ffmpeg -i  "$$i" -af "apad=pad_dur=1"  /tmp/zh/"$${i%.*}_silence.mp3"; done
-	cd $(src_zh); for i in *.mp3; do ffmpeg -i $(src_en)/"$$i" -i /tmp/zh/"$${i%.*}_silence.mp3" -i ../../"peep_silence.mp3" -filter_complex "[1:a][1:a][0:a][1:a][2:a]concat=n=5:v=0:a=1[out]" -map "[out]" ../concat/"$${i%.*}.mp3"; done
+.PHONY: audio 	cd $(src_zh); for i in *.mp3; do ffmpeg -i  "$$i" -af "apad=pad_dur=1"  /tmp/zh/"$${i%.*}_silence.mp3"; done
+audio: 	cd $(src_zh); for i in *.mp3; do ffmpeg -i $(src_en)/"$$i" -i /tmp/zh/"$${i%.*}_silence.mp3" -i ../../"peep_silence.mp3" -filter_complex "[1:a][1:a][0:a][1:a][2:a]concat=n=5:v=0:a=1[out]" -map "[out]" ../concat/"$${i%.*}.mp3"; done
+	mkdir -p $(dst) 	thunar  $(dst)
 
 .PHONY: clean
 clean:
@@ -71,3 +79,7 @@ cp-dia:
 .PHONY: cp-clo
 cp-clo:
 	cp $(data_dir)/output/clozes.json .
+
+.PHONY: open
+open:
+	thunar  ./out
