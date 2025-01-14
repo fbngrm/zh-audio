@@ -1,7 +1,10 @@
 data_dir=../zh-anki/data/$(src)/$(lesson)
 src_zh=./out/zh
 src_en=../en
-dst=./out/concat
+concat_dir=./out/concat
+
+week := $(shell date +%V)
+export_dir=~/Dropbox/zh/week-$(week)
 
 .PHONY: cp-w
 cp-w: cp-w w
@@ -46,7 +49,7 @@ p: clean
 
 .PHONY: audio 	cd $(src_zh); for i in *.mp3; do ffmpeg -i  "$$i" -af "apad=pad_dur=1"  /tmp/zh/"$${i%.*}_silence.mp3"; done
 audio: 	cd $(src_zh); for i in *.mp3; do ffmpeg -i $(src_en)/"$$i" -i /tmp/zh/"$${i%.*}_silence.mp3" -i ../../"peep_silence.mp3" -filter_complex "[1:a][1:a][0:a][1:a][2:a]concat=n=5:v=0:a=1[out]" -map "[out]" ../concat/"$${i%.*}.mp3"; done
-	mkdir -p $(dst) 	thunar  $(dst)
+	mkdir -p $(concat_dir) 	thunar  $(dsconcat_dir)
 
 .PHONY: clean
 clean:
@@ -82,4 +85,18 @@ cp-clo:
 
 .PHONY: open
 open:
-	thunar  ./out
+	@if [ -d "$(concat_dir)" ]; then \
+		thunar $(concat_dir); \
+	else \
+		thunar $(src_zh); \
+	fi
+
+.PHONY: export
+export:
+	mkdir -p $(export_dir)
+	@if [ -d "$(concat_dir)" ]; then \
+		cp -r $(concat_dir)/* $(export_dir)/; \
+	else \
+		cp -r $(src_zh)/* $(export_dir)/; \
+	fi
+

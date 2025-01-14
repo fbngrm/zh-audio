@@ -16,8 +16,7 @@ type CedictEntry struct {
 }
 
 type HSKEntry struct {
-	HSKEnglish string   `json:"hsk_en"`
-	Tones      []string `json:"tones"`
+	HSKEnglish string `json:"hsk_en"`
 }
 
 type Example struct {
@@ -33,6 +32,7 @@ type Word struct {
 	Note        string        `json:"note"`
 	Translation string        `json:"translation"` // this is coming from data/translations file
 	Examples    []Example     `json:"examples"`
+	Tones       []string      `json:"tones"`
 }
 
 type Cloze struct {
