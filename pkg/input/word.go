@@ -36,14 +36,12 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 				tones += ", followed by "
 			}
 		}
-		if len(tones) == 1 {
-			query += w.AzureDownloader.PrepareEnglishQuery("The tone is "+tones, "1000ms")
-		} else if len(tones) > 1 {
+		if len(wd.Tones) == 1 {
+			query += w.AzureDownloader.PrepareEnglishQuery("The tone is the "+tones, "1000ms")
+		} else if len(wd.Tones) > 1 {
 			query += w.AzureDownloader.PrepareEnglishQuery("The tones are "+tones, "1000ms")
 		}
 		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "2000ms", true)
-
-		fmt.Println("word " + wd.Chinese + " has " + tones)
 
 		wordEng := ""
 		if len(wd.HSK) != 0 {
@@ -73,7 +71,7 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 		}
 
-		// fmt.Println(query)
+		fmt.Println(query)
 		if err := w.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(wd.Chinese), true); err != nil {
 			return err
 		}
