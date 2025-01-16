@@ -71,7 +71,7 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 		}
 
-		fmt.Println(query)
+		// fmt.Println(query)
 		if err := w.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(wd.Chinese), true); err != nil {
 			return err
 		}
