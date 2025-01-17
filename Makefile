@@ -30,7 +30,7 @@ dialogs:
 cp-s: cp-sen s
 
 .PHONY: s
-s: clean segment-sen sentences
+s: clean segment-sen sentences audio
 
 .PHONY: sentences
 sentences:
