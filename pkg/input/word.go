@@ -63,9 +63,11 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 		query += w.replaceTextWithAudio(wordEng, "1000ms")
 		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1500ms", true)
 		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1500ms", true)
+		query += c.replaceTextWithAudio(removeWrappingSingleQuotes(wd.Note), "200ms")
 		query += w.AzureDownloader.PrepareEnglishQuery("Here are a few example sentences", "1000ms")
 
 		for _, e := range wd.Examples {
+			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 			query += w.AzureDownloader.PrepareEnglishQuery(e.English, "2000ms")
 			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
