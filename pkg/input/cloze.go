@@ -53,16 +53,28 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 		return err
 	}
 	for _, cl := range clozes {
-		query := ""
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
-		query += c.AzureDownloader.PrepareEnglishQuery(cl.English, "2000ms")
-
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "2000ms", false)
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1000ms", false)
 		if len(cl.Word.HSK) == 0 && len(cl.Word.Cedict) == 0 {
 			return fmt.Errorf("word %s has no translation", cl.Word.Chinese)
 		}
+
+		query := ""
+		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "2000ms", false)
+		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1000ms", false)
+
+		tones := ""
+		for i, t := range cl.Word.Tones {
+			tones += t
+			if i < len(cl.Word.Tones)-1 {
+				tones += ", followed by "
+			}
+		}
+		if len(cl.Word.Tones) == 1 {
+			query += w.AzureDownloader.PrepareEnglishQuery("The tone is the "+tones, "1000ms")
+		} else if len(cl.Word.Tones) > 1 {
+			query += w.AzureDownloader.PrepareEnglishQuery("The tones are "+tones, "1000ms")
+		}
+		query += w.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "2000ms", true)
+
 		wordEng := ""
 		if len(cl.Word.HSK) != 0 {
 			for i, h := range cl.Word.HSK {
@@ -80,24 +92,25 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 				}
 			}
 		}
-		query += c.replaceTextWithAudio(wordEng, "2000ms")
-
+		query += w.replaceTextWithAudio(wordEng, "1000ms")
+		query += w.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1500ms", true)
+		query += w.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1500ms", true)
 		query += c.replaceTextWithAudio(removeWrappingSingleQuotes(cl.Word.Note), "200ms")
-		query += c.AzureDownloader.PrepareEnglishQuery("Here are a few more examples", "1000ms")
+		query += w.AzureDownloader.PrepareEnglishQuery("Here are a few example sentences", "1000ms")
+
+		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
+		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
+		query += c.AzureDownloader.PrepareEnglishQuery(cl.English, "2000ms")
+		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
 
 		for _, e := range cl.Word.Examples {
+			query += c.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 			query += c.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 			query += c.AzureDownloader.PrepareEnglishQuery(e.English, "2000ms")
-		}
-
-		query += c.replaceTextWithAudio("Repeat", "1000ms")
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", false)
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", false)
-		for _, e := range cl.Word.Examples {
 			query += c.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 		}
 
-		fmt.Println(query)
+		// fmt.Println(query)
 		if err := c.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(cl.SentenceBack), true); err != nil {
 			return err
 		}
