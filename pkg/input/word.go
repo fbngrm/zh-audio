@@ -41,7 +41,7 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 		} else if len(wd.Tones) > 1 {
 			query += w.AzureDownloader.PrepareEnglishQuery("The tones are "+tones, "1000ms")
 		}
-		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "2000ms", true)
+		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
 
 		wordEng := ""
 		if len(wd.HSK) != 0 {
@@ -52,9 +52,11 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 				}
 			}
 		}
+		// Regex to match ", CL" followed by anything until the next whitespace
+		re := regexp.MustCompile(`, CL[^\s]*`)
 		if len(wd.HSK) == 0 && len(wd.Cedict) != 0 {
 			for i, h := range wd.Cedict {
-				wordEng += h.CedictEnglish + " "
+				wordEng += re.ReplaceAllString(h.CedictEnglish, "") + " "
 				if i < len(wd.Cedict)-1 {
 					wordEng += "or "
 				}
@@ -73,7 +75,7 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 		}
 
-		// fmt.Println(query)
+		fmt.Println(query)
 		if err := w.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(wd.Chinese), true); err != nil {
 			return err
 		}

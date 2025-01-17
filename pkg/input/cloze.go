@@ -73,7 +73,7 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 		} else if len(cl.Word.Tones) > 1 {
 			query += c.AzureDownloader.PrepareEnglishQuery("The tones are "+tones, "1000ms")
 		}
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "2000ms", true)
+		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1000ms", true)
 
 		wordEng := ""
 		if len(cl.Word.HSK) != 0 {
@@ -84,9 +84,11 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 				}
 			}
 		}
+		// Regex to match ", CL" followed by anything until the next whitespace
+		re := regexp.MustCompile(`, CL[^\s]*`)
 		if len(cl.Word.HSK) == 0 && len(cl.Word.Cedict) != 0 {
 			for i, h := range cl.Word.Cedict {
-				wordEng += h.CedictEnglish + " "
+				wordEng += re.ReplaceAllString(h.CedictEnglish, "") + " "
 				if i < len(cl.Word.Cedict)-1 {
 					wordEng += "or "
 				}
