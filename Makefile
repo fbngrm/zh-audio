@@ -45,7 +45,7 @@ c: clean
 
 .PHONY: p
 p: clean
-	go run cmd/main.go -src patterns -p
+	go run cmd/main.go -src patterns.json -p
 
 .PHONY: audio
 audio:

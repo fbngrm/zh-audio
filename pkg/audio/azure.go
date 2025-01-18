@@ -16,7 +16,7 @@ import (
 )
 
 // speed
-const rate = "0.8"
+const rate = "0.7"
 
 type AzureClient struct {
 	endpoint    string
