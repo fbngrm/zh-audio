@@ -47,9 +47,6 @@ func main() {
 			GCPDownloader:   gcpClient,
 			AzureDownloader: azureClient,
 		}
-		// if err := dialogProcessor.GetGCPAudio(in); err != nil {
-		// 	log.Fatal(err)
-		// }
 		if err := dialogProcessor.GetAzureAudio(in); err != nil {
 			log.Fatal(err)
 		}
@@ -88,7 +85,4 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	// if err := sentenceProcessor.GetGCPAudio(in); err != nil {
-	// 	log.Fatal(err)
-	// }
 }

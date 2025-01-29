@@ -1,51 +1,38 @@
-data_dir=../zh-anki/data/$(src)/$(lesson)
 src_zh=./out/zh
 src_en=../en
 concat_dir=./out/concat
 
-week := $(shell date +%V)
-export_dir=~/Dropbox/zh/week-$(week)
-
-.PHONY: cp-w
-cp-w: cp-w w
+today := $(shell date +"%Y-%m-%d")
+export_dir=~/Dropbox/zh/$(today)/
 
 .PHONY: w
 w: clean words
 
 .PHONY: words
 words:
-	go run cmd/main.go -src words.json -w
-
-.PHONY: cp-d
-cp-d: cp-dia d
+	go run cmd/main.go -src $(src) -w
 
 .PHONY: d
 d: clean segment-dia dialogs audio
 
 .PHONY: dialogs
 dialogs:
-	go run cmd/main.go -src dialogs -d
-
-.PHONY: cp-s
-cp-s: cp-sen s
+	go run cmd/main.go -src $(src) -d
 
 .PHONY: s
 s: clean segment-sen sentences audio
 
 .PHONY: sentences
 sentences:
-	go run cmd/main.go -src sentences -s
-
-.PHONY: cp-c
-cp-d: cp-clo c
+	go run cmd/main.go -src $(src) -s
 
 .PHONY: c
 c: clean
-	go run cmd/main.go -src clozes.json -c
+	go run cmd/main.go -src $(src) -c
 
 .PHONY: p
 p: clean
-	go run cmd/main.go -src patterns.json -p
+	go run cmd/main.go -src $(src) -p
 
 .PHONY: audio
 audio:
@@ -73,18 +60,6 @@ segment-dia:
 	cd ../stanford-segmenter && ./segment.sh pku ../zh-audio/dialogs UTF-8 0 > /tmp/segmented
 	cat /tmp/segmented > ../zh-audio/dialogs
 	cd -
-
-.PHONY: cp-sen
-cp-sen:
-	cp $(data_dir)/input/sentences .
-
-.PHONY: cp-dia
-cp-dia:
-	cp $(data_dir)/input/dialogues .
-
-.PHONY: cp-clo
-cp-clo:
-	cp $(data_dir)/output/clozes.json .
 
 .PHONY: open
 open:

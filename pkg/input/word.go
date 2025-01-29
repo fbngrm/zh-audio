@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/fbngrm/zh-audio/pkg/audio"
 )
@@ -16,7 +17,7 @@ type WordProcessor struct {
 }
 
 func (w *WordProcessor) GetAzureAudio(path string) error {
-	words, err := loadWordsFromFile(path)
+	words, err := loadWordsFromDir(path)
 	if err != nil {
 		return err
 	}
@@ -71,10 +72,11 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 		for _, e := range wd.Examples {
 			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
-			query += w.AzureDownloader.PrepareEnglishQuery(e.English, "2000ms")
+			query += w.AzureDownloader.PrepareEnglishQuery(removeWrappingSingleQuotes(e.English), "2000ms")
 			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 		}
 
+		query = cleanQuery(query)
 		fmt.Println(query)
 		if err := w.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(wd.Chinese), true); err != nil {
 			return err
@@ -104,22 +106,41 @@ func (w *WordProcessor) replaceTextWithAudio(text, pause string) string {
 	return text
 }
 
-func loadWordsFromFile(filename string) ([]Word, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
-	}
-	defer file.Close()
-
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
-	}
-
+func loadWordsFromDir(dir string) ([]Word, error) {
 	var words []Word
-	if err := json.Unmarshal(data, &words); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
+			continue
+		}
+
+		filePath := filepath.Join(dir, file.Name())
+
+		data, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+		}
+
+		var word Word
+		if err := json.Unmarshal(data, &word); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal JSON in file %s: %w", filePath, err)
+		}
+
+		words = append(words, word)
 	}
 
 	return words, nil
+}
+
+// Compile a regex to match everything between </voice> and the newline character
+// Replace all matches of the regex with just the </voice> tag followed by a newline
+// This effectively removes anything between </voice> and \n
+func cleanQuery(query string) string {
+	re := regexp.MustCompile(`</voice>.*\n`)
+	return re.ReplaceAllString(query, "</voice>\n")
 }
