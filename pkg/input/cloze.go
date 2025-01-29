@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/fbngrm/zh-audio/pkg/audio"
 )
@@ -48,7 +49,7 @@ type ClozeProcessor struct {
 }
 
 func (c *ClozeProcessor) GetAzureAudio(path string) error {
-	clozes, err := loadClozesFromFile(path)
+	clozes, err := loadClozesFromDir(path)
 	if err != nil {
 		return err
 	}
@@ -141,24 +142,32 @@ func (c *ClozeProcessor) replaceTextWithAudio(text, pause string) string {
 	return text
 }
 
-func loadClozesFromFile(filename string) ([]Cloze, error) {
-	// Open the JSON file
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
-	}
-	defer file.Close()
-
-	// Read file content
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
-	}
-
-	// Unmarshal JSON into a slice of Cloze structs
+func loadClozesFromDir(dir string) ([]Cloze, error) {
 	var clozes []Cloze
-	if err := json.Unmarshal(data, &clozes); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
+			continue
+		}
+
+		filePath := filepath.Join(dir, file.Name())
+
+		data, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+		}
+
+		var cloze Cloze
+		if err := json.Unmarshal(data, &cloze); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal JSON in file %s: %w", filePath, err)
+		}
+
+		clozes = append(clozes, cloze)
 	}
 
 	return clozes, nil
@@ -166,7 +175,7 @@ func loadClozesFromFile(filename string) ([]Cloze, error) {
 
 func main() {
 	filename := "clozes.json"
-	clozes, err := loadClozesFromFile(filename)
+	clozes, err := loadClozesFromDir(filename)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
