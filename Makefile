@@ -3,7 +3,8 @@ src_en=../en
 concat_dir=./out/concat
 
 today := $(shell date +"%Y-%m-%d")
-export_dir=~/Dropbox/zh/$(today)/
+export_dir=~/Dropbox/zh/audio-loops/$(today)/
+cache_dir=~/Dropbox/zh/cache/audio-loops/
 
 .PHONY: w
 w: clean words
@@ -72,9 +73,12 @@ open:
 .PHONY: export
 export:
 	mkdir -p $(export_dir)
+	mkdir -p $(cache_dir)
 	@if [ -d "$(concat_dir)" ]; then \
 		cp -r $(concat_dir)/* $(export_dir)/; \
+		cp -r $(concat_dir)/* $(cache_dir)/; \
 	else \
 		cp -r $(src_zh)/* $(export_dir)/; \
+		cp -r $(src_zh)/* $(cache_dir)/; \
 	fi
 
