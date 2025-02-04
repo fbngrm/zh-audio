@@ -38,6 +38,7 @@ type Word struct {
 
 type Cloze struct {
 	SentenceBack string `json:"chinese"`
+	Filename     string `json:"filename"`
 	English      string `json:"english"`
 	Grammar      string `json:"grammar"`
 	Note         string `json:"note"`
@@ -114,7 +115,7 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 		}
 
 		// fmt.Println(query)
-		if err := c.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(cl.SentenceBack), true); err != nil {
+		if err := c.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(cl.Filename), true); err != nil {
 			return err
 		}
 	}

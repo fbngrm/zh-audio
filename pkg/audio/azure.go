@@ -68,6 +68,7 @@ func (c *AzureClient) GetVoices(speakers map[string]struct{}) map[string]string 
 // download audio file from azure text-to-speech api if it doesn't exist in cache dir.
 // we also store a sentenceAndDialogOnlyDir to create audio loops for which we want to exclude words and chars.
 func (c *AzureClient) Fetch(ctx context.Context, query, filename string, isSentenceOrDialog bool) error {
+	time.Sleep(200 * time.Millisecond)
 	if contains(c.ignoreChars, query) {
 		return nil
 	}
@@ -87,6 +88,14 @@ func (c *AzureClient) Fetch(ctx context.Context, query, filename string, isSente
 		return err
 	}
 	defer out.Close()
+
+	// buf := new(strings.Builder)
+	// _, err = io.Copy(buf, resp.Body)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// // check errors
+	// fmt.Println(buf.String())
 
 	if _, err := io.Copy(out, resp.Body); err != nil {
 		return err
