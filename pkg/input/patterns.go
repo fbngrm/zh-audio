@@ -27,10 +27,10 @@ type PatternProcessor struct {
 }
 
 func (p *PatternProcessor) replaceTextWithAudio(text, pause string) string {
-	// Define a regex pattern to match sequences of Chinese characters along with punctuation
-	chineseRe := regexp.MustCompile(`[\p{Han}][\p{Han}\p{P}]*`)
-	// Define a regex pattern to match sequences of English words or contractions along with punctuation
-	englishRe := regexp.MustCompile(`[A-Za-z]+(?:'[A-Za-z]+)?(?:\s+[A-Za-z]+(?:'[A-Za-z]+)?)?[\p{P}]*`)
+	// Define a regex pattern to match sequences of Chinese characters
+	chineseRe := regexp.MustCompile(`[\p{Han}]+`)
+	// Update the regex pattern to match English phrases with surrounding punctuation included
+	englishRe := regexp.MustCompile(`[A-Za-z]+(?:'[A-Za-z]+)?(?:[\s]*[,!?;:.]*[\s]*[A-Za-z]+(?:'[A-Za-z]+)?)*[,.!?;:]*`)
 
 	// Replace English text with audio
 	text = englishRe.ReplaceAllStringFunc(text, func(englishText string) string {
@@ -110,22 +110,23 @@ func (p *PatternProcessor) GetAzureAudio(path string) error {
 		return err
 	}
 	for _, pa := range patterns {
-		query := p.splitByLanguageChange(removeAllQuotes(removeBrackets(pa.Note)), "500ms")
-		query += p.splitByLanguageChange(removeAllQuotes(removeBrackets(replaceSpecialChars(pa.Structure))), "500ms")
+		note := removeDots(removeBrackets(pa.Note))
+		query := p.AzureDownloader.PrepareQueryWithRandomVoice(pa.Pattern, "1500ms", true)
+		query += p.AzureDownloader.PrepareQueryWithRandomVoice(pa.Pattern, "1500ms", true)
+		query += p.replaceTextWithAudio(note, "200ms")
+		query += p.replaceTextWithAudio(removeAllQuotes(removeBrackets(replaceSpecialChars(pa.Structure))), "500ms")
 		query += p.AzureDownloader.PrepareEnglishQuery("Here are a few examples", "1000ms")
 		for _, e := range pa.Examples {
-			query += p.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "1500ms", true)
-			query += p.AzureDownloader.PrepareEnglishQuery("which means", "300ms")
-			query += p.AzureDownloader.PrepareEnglishQuery(e.English, "100ms")
-			query += p.AzureDownloader.PrepareEnglishQuery("repeat the sentence", "300ms")
-			query += p.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2500ms", true)
-			query += p.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2500ms", true)
+			query += p.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += p.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += p.AzureDownloader.PrepareEnglishQuery(removeWrappingSingleQuotes(e.English), "2000ms")
+			query += p.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 		}
-		// query += p.splitByLanguageChange(removeAllQuotes(removeBrackets("Remember when using "+pa.Pattern)), "500ms")
-		// query += p.splitByLanguageChange(removeAllQuotes(removeBrackets("the most important points are")), "500ms")
-		// query += p.splitByLanguageChange(removeAllQuotes(removeBrackets(strings.Join(pa.Summary, "\n"))), "1500ms")
+		query += p.AzureDownloader.PrepareEnglishQuery("The most important points when using the pattern are", "200ms")
+		query += p.AzureDownloader.PrepareEnglishQuery(strings.Join(pa.Summary, "\n"), "1500ms")
+		query = cleanQuery(query)
 		fmt.Println(query)
-		if err := p.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(pa.Pattern), true); err != nil {
+		if err := p.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(pa.Pattern)); err != nil {
 			return err
 		}
 	}
@@ -194,4 +195,8 @@ func removeAllQuotes(input string) string {
 
 	// Replace all matches with an empty string
 	return re.ReplaceAllString(input, "")
+}
+
+func removeDots(input string) string {
+	return strings.ReplaceAll(input, "…", "")
 }

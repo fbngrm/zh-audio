@@ -75,7 +75,7 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 		} else if len(cl.Word.Tones) > 1 {
 			query += c.AzureDownloader.PrepareEnglishQuery("The tones are "+tones, "1000ms")
 		}
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1000ms", true)
+		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1000ms", false)
 
 		wordEng := ""
 		if len(cl.Word.HSK) != 0 {
@@ -96,8 +96,7 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 				}
 			}
 		}
-		query += c.replaceTextWithAudio(wordEng, "1000ms")
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1500ms", true)
+		query += c.replaceTextWithAudio(removeWrappingSingleQuotes(wordEng), "1000ms")
 		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1500ms", true)
 		query += c.replaceTextWithAudio(removeWrappingSingleQuotes(cl.Word.Note), "200ms")
 		query += c.AzureDownloader.PrepareEnglishQuery("Here are a few example sentences", "1000ms")
@@ -110,12 +109,14 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 		for _, e := range cl.Word.Examples {
 			query += c.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 			query += c.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
-			query += c.AzureDownloader.PrepareEnglishQuery(e.English, "2000ms")
+			query += c.AzureDownloader.PrepareEnglishQuery(removeWrappingSingleQuotes(e.English), "2000ms")
 			query += c.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 		}
 
+		query = cleanQuery(query)
+		fmt.Println(strings.Count(query, "<voice"))
 		// fmt.Println(query)
-		if err := c.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(cl.Filename), true); err != nil {
+		if err := c.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(cl.Filename)); err != nil {
 			return err
 		}
 	}
@@ -189,9 +190,5 @@ func main() {
 }
 
 func removeWrappingSingleQuotes(input string) string {
-	// Define a regex pattern to match single quotes wrapping around Chinese characters
-	re := regexp.MustCompile(`'([\p{Han}]+)'`)
-
-	// Replace matches with just the Chinese characters, removing the wrapping single quotes
-	return re.ReplaceAllString(input, "$1")
+	return strings.ReplaceAll(input, "'", "")
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
@@ -25,7 +26,7 @@ type AzureClient struct {
 	ignoreChars []string
 }
 
-func NewAzureClient(apiKey, dir string, ignoreChars []string) (*AzureClient, error) {
+func NewAzureClient(apiKey, endpoint, dir string, ignoreChars []string) (*AzureClient, error) {
 	if err := os.RemoveAll(dir); err != nil {
 		return nil, err
 	}
@@ -34,7 +35,7 @@ func NewAzureClient(apiKey, dir string, ignoreChars []string) (*AzureClient, err
 		return nil, err
 	}
 	return &AzureClient{
-		endpoint:    "https://germanywestcentral.tts.speech.microsoft.com/cognitiveservices/v1",
+		endpoint:    endpoint,
 		apiKey:      apiKey,
 		AudioDir:    dir,
 		ignoreChars: ignoreChars,
@@ -66,9 +67,7 @@ func (c *AzureClient) GetVoices(speakers map[string]struct{}) map[string]string 
 }
 
 // download audio file from azure text-to-speech api if it doesn't exist in cache dir.
-// we also store a sentenceAndDialogOnlyDir to create audio loops for which we want to exclude words and chars.
-func (c *AzureClient) Fetch(ctx context.Context, query, filename string, isSentenceOrDialog bool) error {
-	time.Sleep(200 * time.Millisecond)
+func (c *AzureClient) Fetch(ctx context.Context, query, filename string) error {
 	if contains(c.ignoreChars, query) {
 		return nil
 	}
@@ -77,25 +76,24 @@ func (c *AzureClient) Fetch(ctx context.Context, query, filename string, isSente
 	}
 	lessonPath := filepath.Join(c.AudioDir, filename)
 
-	resp, err := c.fetch(ctx, query, 3)
+	resp, err := c.fetch(ctx, query, 0)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
+	fmt.Println("Response Headers:")
+	for key, values := range resp.Header {
+		for _, value := range values {
+			fmt.Printf("%s: %s\n", key, value)
+		}
+	}
 
 	out, err := os.Create(lessonPath)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
-
-	// buf := new(strings.Builder)
-	// _, err = io.Copy(buf, resp.Body)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// // check errors
-	// fmt.Println(buf.String())
 
 	if _, err := io.Copy(out, resp.Body); err != nil {
 		return err
@@ -105,19 +103,27 @@ func (c *AzureClient) Fetch(ctx context.Context, query, filename string, isSente
 	return nil
 }
 
-func (c *AzureClient) fetch(ctx context.Context, text string, retryCount int) (*http.Response, error) {
-	if retryCount == -1 {
-		return nil, fmt.Errorf("excceded retries for query: %s", text)
+func (c *AzureClient) fetch(ctx context.Context, query string, retryCount int) (*http.Response, error) {
+	if retryCount == 7 {
+		return nil, fmt.Errorf("excceded retries for query: %s", query)
 	}
 
-	query := `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="zh-CN">%s</speak>`
-	query = fmt.Sprintf(query, text)
+	throttle := 0
+	if retryCount != 0 {
+		throttle = int(math.Pow(float64(throttle), float64(retryCount)))
+		fmt.Printf("Quota Exceeded, retry in: %d seconds\n", throttle)
+		time.Sleep(time.Duration(throttle) * time.Second)
+	} else {
+		time.Sleep(time.Duration(throttle) * time.Second)
+		query = fmt.Sprintf(`<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="zh-CN">%s</speak>`, query)
+
+	}
 
 	req, err := http.NewRequest("POST", c.endpoint, bytes.NewBuffer([]byte(query)))
 	if err != nil {
 		fmt.Printf("error creating request: %v", err)
 		fmt.Println("retry...")
-		return c.fetch(ctx, text, retryCount-1)
+		return c.fetch(ctx, query, retryCount+1)
 	}
 	req.Header.Set("Ocp-Apim-Subscription-Key", c.apiKey)
 	req.Header.Set("Content-Type", "application/ssml+xml")
@@ -131,6 +137,20 @@ func (c *AzureClient) fetch(ctx context.Context, text string, retryCount int) (*
 		fmt.Println("retry...")
 		return c.fetch(ctx, query, retryCount-1)
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Status-Code: ", resp.StatusCode)
+		buf := new(strings.Builder)
+		_, err = io.Copy(buf, resp.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		s := buf.String()
+		if s == "Quota Exceeded" || resp.StatusCode == http.StatusTooManyRequests {
+			return c.fetch(ctx, query, retryCount+1)
+		}
+	}
+
 	return resp, nil
 }
 

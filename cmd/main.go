@@ -32,7 +32,11 @@ func main() {
 	if azureApiKey == "" {
 		log.Fatal("Environment variable SPEECH_KEY is not set")
 	}
-	azureClient, err := audio.NewAzureClient(azureApiKey, out, ignoreChars)
+	azureEndpoint := os.Getenv("AZURE_ENDPOINT")
+	if azureEndpoint == "" {
+		log.Fatal("Environment variable AZURE_ENDPOINT is not set")
+	}
+	azureClient, err := audio.NewAzureClient(azureApiKey, azureEndpoint, out, ignoreChars)
 	if err != nil {
 		log.Fatal(err)
 	}

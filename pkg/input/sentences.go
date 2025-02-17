@@ -39,8 +39,7 @@ func (p *SentenceProcessor) GetAzureAudio(path string) error {
 		if err := p.AzureDownloader.Fetch(
 			context.Background(),
 			query,
-			audio.GetFilename(sentence),
-			true); err != nil {
+			audio.GetFilename(sentence)); err != nil {
 			return err
 		}
 	}
