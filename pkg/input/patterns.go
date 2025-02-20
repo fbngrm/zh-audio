@@ -47,63 +47,6 @@ func (p *PatternProcessor) replaceTextWithAudio(text, pause string) string {
 	return text
 }
 
-func (p *PatternProcessor) splitByLanguageChange(input, pause string) string {
-	// Define regex patterns for Chinese and non-Chinese text
-	chineseRe := regexp.MustCompile(`[\p{Han}]+`)
-	nonChineseRe := regexp.MustCompile(`[^\p{Han}]+`)
-
-	// Initialize variables
-	var chunks []string
-	var currentChunk strings.Builder
-	isChinese := false // Tracks if the current chunk is Chinese or not
-
-	// Iterate through each character in the input
-	for _, char := range input {
-		charStr := string(char)
-
-		if chineseRe.MatchString(charStr) {
-			// If current character is Chinese
-			if !isChinese && currentChunk.Len() > 0 {
-				// Flush the non-Chinese chunk
-				chunks = append(chunks,
-					p.AzureDownloader.PrepareEnglishQuery(
-						strings.TrimSpace(currentChunk.String()), pause))
-				currentChunk.Reset()
-			}
-			isChinese = true
-		} else if nonChineseRe.MatchString(charStr) {
-			// If current character is non-Chinese
-			if isChinese && currentChunk.Len() > 0 {
-				// Flush the Chinese chunk
-				chunks = append(chunks,
-					p.AzureDownloader.PrepareQueryWithRandomVoice(
-						strings.TrimSpace(currentChunk.String()), pause, false))
-				currentChunk.Reset()
-			}
-			isChinese = false
-		}
-		// Append character to the current chunk
-		currentChunk.WriteString(charStr)
-	}
-
-	if currentChunk.Len() == 0 {
-		return strings.Join(chunks, "")
-	}
-
-	// Flush the last chunk if it exists
-	if !isChinese {
-		chunks = append(chunks,
-			p.AzureDownloader.PrepareEnglishQuery(
-				strings.TrimSpace(currentChunk.String()), pause))
-	} else {
-		chunks = append(chunks,
-			p.AzureDownloader.PrepareQueryWithRandomVoice(
-				strings.TrimSpace(currentChunk.String()), pause, false))
-	}
-
-	return strings.Join(chunks, "")
-}
-
 func (p *PatternProcessor) GetAzureAudio(path string) error {
 	patterns, err := loadFromDir(path)
 	if err != nil {
