@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# AZURE_ENDPOINT=https://northeurope.api.cognitive.microsoft.com/
-AZURE_ENDPOINT=https://northeurope.tts.speech.microsoft.com/cognitiveservices/v1
-SPEECH_KEY=71hFfaZfatPk0ZePtHJdg9FbK9z0ECRCUBMKLGSEDiQl3MQ8LP0OJQQJ99BBACi5YpzXJ3w3AAAYACOGBNKw
-SPEECH_REGION=northeurope
-
 curl --location --request POST "$AZURE_ENDPOINT" \
     --header "Ocp-Apim-Subscription-Key: $SPEECH_KEY" \
     --header "Content-Type: application/ssml+xml" \

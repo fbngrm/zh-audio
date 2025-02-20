@@ -48,7 +48,6 @@ add-beep:
 	cd $(src_zh); for i in *.mp3; do ffmpeg -i /tmp/zh/"$${i%.*}_silence.mp3" -i ../../"peep_silence.mp3" -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1[out]" -map "[out]" ../concat/"$${i%.*}.mp3"; done
 	thunar  $(concat_dir)
 
-
 .PHONY: audio-sen
 audio-sen:
 	mkdir -p $(concat_dir)
@@ -86,8 +85,8 @@ open:
 
 .PHONY: export
 export:
-	mkdir -p $(export_dir)
-	mkdir -p $(cache_dir)
+	mkdir -p $(export_dir) || true
+	mkdir -p $(cache_dir) || true
 	@if [ -d "$(concat_dir)" ]; then \
 		cp -r $(concat_dir)/* $(export_dir)/; \
 		cp -r $(concat_dir)/* $(cache_dir)/; \
