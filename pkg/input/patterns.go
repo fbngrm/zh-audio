@@ -210,6 +210,14 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 			p.concatenator.AddWithPause(cachePath, 1500)
 		}
 
+		// add beep
+		cachePath = p.cache.GetCachePath("peep")
+		if !p.cache.IsInCache(cachePath) {
+			slog.Error("missing peep file in cache", "path", cachePath)
+		} else {
+			p.concatenator.AddWithPause(cachePath, 1500)
+		}
+
 		if err := p.concatenator.Merge(filepath.Join(p.outDir, audio.GetFilename(pa.Pattern))); err != nil {
 			slog.Error("concat files", "pattern", pa.Pattern, "error", err)
 			continue
