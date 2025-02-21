@@ -28,6 +28,10 @@ func main() {
 		log.Fatal("need input file, spcified with -src path/to/input")
 	}
 
+	audioCacheDir := os.Getenv("AUDIO_CACHE_DIR")
+	if audioCacheDir == "" {
+		log.Fatal("Environment variable AUDIO_CACHE_DIR is not set")
+	}
 	azureApiKey := os.Getenv("SPEECH_KEY")
 	if azureApiKey == "" {
 		log.Fatal("Environment variable SPEECH_KEY is not set")
@@ -44,6 +48,12 @@ func main() {
 	gcpClient, err := audio.NewGCPClient(out)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	concatenator := audio.NewConcatenator()
+
+	cache := &audio.Cache{
+		AudioCacheDir: audioCacheDir,
 	}
 
 	if isDialog {
@@ -66,10 +76,19 @@ func main() {
 		}
 	}
 	if isPatterns {
-		patternProcessor := input.PatternProcessor{
-			AzureDownloader: azureClient,
+		patternProcessor, err := input.NewPatternProcessor(
+			azureClient,
+			concatenator,
+			cache,
+			out,
+		)
+		if err != nil {
+			log.Fatal(err)
 		}
-		if err := patternProcessor.GetAzureAudio(in); err != nil {
+		// if err := patternProcessor.GetAzureAudio(in); err != nil {
+		// 	log.Fatal(err)
+		// }
+		if err := patternProcessor.ConcatAudioFromCache(in); err != nil {
 			log.Fatal(err)
 		}
 	}

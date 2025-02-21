@@ -36,7 +36,7 @@ func (p *SentenceProcessor) GetAzureAudio(path string) error {
 		// }
 
 		query := p.AzureDownloader.PrepareQueryWithRandomVoice(sentence, "0.0", true)
-		if err := p.AzureDownloader.Fetch(
+		if _, err := p.AzureDownloader.Fetch(
 			context.Background(),
 			query,
 			audio.GetFilename(sentence)); err != nil {

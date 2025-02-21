@@ -116,7 +116,7 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 		query = cleanQuery(query)
 		fmt.Println(strings.Count(query, "<voice"))
 		// fmt.Println(query)
-		if err := c.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(cl.Filename)); err != nil {
+		if _, err := c.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(cl.Filename)); err != nil {
 			return err
 		}
 	}

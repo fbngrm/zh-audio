@@ -67,40 +67,40 @@ func (c *AzureClient) GetVoices(speakers map[string]struct{}) map[string]string 
 }
 
 // download audio file from azure text-to-speech api if it doesn't exist in cache dir.
-func (c *AzureClient) Fetch(ctx context.Context, query, filename string) error {
+func (c *AzureClient) Fetch(ctx context.Context, query, filename string) (string, error) {
 	if contains(c.ignoreChars, query) {
-		return nil
+		return "", nil
 	}
 	if err := os.MkdirAll(c.AudioDir, os.ModePerm); err != nil {
-		return err
+		return "", err
 	}
 	lessonPath := filepath.Join(c.AudioDir, filename)
 
 	resp, err := c.fetch(ctx, query, 0)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("Response Headers:")
-	for key, values := range resp.Header {
-		for _, value := range values {
-			fmt.Printf("%s: %s\n", key, value)
-		}
-	}
+	// fmt.Println("Response Headers:")
+	// for key, values := range resp.Header {
+	// 	for _, value := range values {
+	// 		fmt.Printf("%s: %s\n", key, value)
+	// 	}
+	// }
 
 	out, err := os.Create(lessonPath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer out.Close()
 
 	if _, err := io.Copy(out, resp.Body); err != nil {
-		return err
+		return "", err
 	}
 
 	slog.Info("audio content generated", "path", lessonPath)
-	return nil
+	return lessonPath, nil
 }
 
 func (c *AzureClient) fetch(ctx context.Context, query string, retryCount int) (*http.Response, error) {

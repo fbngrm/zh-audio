@@ -50,7 +50,7 @@ func (p *DialogProcessor) GetAzureAudio(path string) error {
 			query = p.AzureDownloader.PrepareQueryWithRandomVoice(dialogText, "0.0", false)
 		}
 
-		if err := p.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(dialogText)); err != nil {
+		if _, err := p.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(dialogText)); err != nil {
 			return err
 		}
 	}

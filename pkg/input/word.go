@@ -79,7 +79,7 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 		query = cleanQuery(query)
 		fmt.Println(strings.Count(query, "<voice"))
 		// fmt.Println(query)
-		if err := w.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(wd.Chinese)); err != nil {
+		if _, err := w.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(wd.Chinese)); err != nil {
 			return err
 		}
 	}

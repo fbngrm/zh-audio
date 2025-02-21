@@ -31,14 +31,15 @@ func NewGCPClient(dir string) (*GCPDownloader, error) {
 	if err := os.MkdirAll(filepath.Join(dir, "en"), os.ModePerm); err != nil {
 		return nil, err
 	}
-	dirSlow := filepath.Join(dir, "slow")
-	if err := os.MkdirAll(dirSlow, os.ModePerm); err != nil {
-		return nil, err
-	}
+	// FIXME: remove, unused
+	// dirSlow := filepath.Join(dir, "slow")
+	// if err := os.MkdirAll(dirSlow, os.ModePerm); err != nil {
+	// 	return nil, err
+	// }
 	return &GCPDownloader{
-		dirEN:   dirEN,
-		dirZH:   dirZH,
-		dirSlow: dirSlow,
+		dirEN: dirEN,
+		dirZH: dirZH,
+		// dirSlow: dirSlow,
 	}, nil
 }
 
