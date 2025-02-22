@@ -67,11 +67,20 @@ func main() {
 		os.Exit(0)
 	}
 	if isSentences {
-		sentenceProcessor := input.SentenceProcessor{
-			GCPDownloader:   gcpClient,
-			AzureDownloader: azureClient,
+		sentenceProcessor, err := input.NewSentenceProcessor(
+			azureClient,
+			gcpClient,
+			concatenator,
+			cache,
+			out,
+		)
+		if err != nil {
+			log.Fatal(err)
 		}
-		if err := sentenceProcessor.GetAzureAudio(in); err != nil {
+		// if err := sentenceProcessor.GetAzureAudio(in); err != nil {
+		// 	log.Fatal(err)
+		// }
+		if err := sentenceProcessor.ConcatAudioFromCache(in); err != nil {
 			log.Fatal(err)
 		}
 	}

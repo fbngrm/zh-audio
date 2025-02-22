@@ -72,6 +72,20 @@ func (p *GCPDownloader) FetchZH(ctx context.Context, query string) error {
 	return p.FetchWithVoice(ctx, query, GetRandomVoiceZH())
 }
 
+func (p *GCPDownloader) Fetch(ctx context.Context, query string) (string, error) {
+	resp, err := fetch(ctx, query, GetRandomVoiceEN())
+	if err != nil {
+		return "", err
+	}
+	// the resp's AudioContent is binary
+	path := p.GetOutpathZH(query)
+	err = ioutil.WriteFile(path, resp.AudioContent, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func (p *GCPDownloader) FetchEN(ctx context.Context, queryZH, query string) error {
 	resp, err := fetch(ctx, query, GetRandomVoiceEN())
 	if err != nil {
