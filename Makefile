@@ -1,59 +1,64 @@
-src_zh=./out/zh
+out_dir=./out
+src_zh=$(out_dir)/zh
 src_en=../en
-concat_dir=./out/concat
 
 today := $(shell date +"%Y-%m-%d")
-export_dir=~/Dropbox/zh/audio-loops/$(today)/
-cache_dir=~/Dropbox/zh/cache/audio-loops/
+export_dir=/home/f/Dropbox/zh/audio-loops/$(today)/
+cache_dir=/home/f/Dropbox/zh/cache/audio/
+loop_cache_dir=/home/f/Dropbox/zh/cache/audio-loops/
+
+export AUDIO_CACHE_DIR=$(cache_dir)
 
 .PHONY: w
-w: clean words add-beep export
+w: clean words add-beep
 
 .PHONY: words
 words:
 	go run cmd/main.go -src $(src) -w
 
 .PHONY: d
-d: clean segment-dia dialogs audio add-beep export
+d: clean segment-dia dialogs audio add-beep
 
 .PHONY: dialogs
 dialogs:
 	go run cmd/main.go -src $(src) -d
 
 .PHONY: s
-s: clean segment-sen sentences audio-sen export
+s: clean segment-sen sentences
 
 .PHONY: sentences
 sentences:
 	go run cmd/main.go -src $(src) -s
+	mkdir -p loop_cache_dir || true
+	mkdir -p $(export_dir) || true
+	cp -r $(out_dir)/sentences/* $(export_dir)
+	cp -r $(out_dir)/sentences/* $(loop_cache_dir)
+	cp -r $(src_zh)/* $(cache_dir) || true
 
 .PHONY: c
-c: clean clozes add-beep export
+c: clean clozes add-beep
 
 .PHONY: clozes
 clozes:
 	go run cmd/main.go -src $(src) -c
 
 .PHONY: p
-p: clean patterns add-beep export
+p: clean patterns
 
 .PHONY: patterns
 patterns:
 	go run cmd/main.go -src $(src) -p
+	mkdir -p loop_cache_dir || true
+	mkdir -p $(export_dir) || true
+	cp -r $(out_dir)/patterns/* $(export_dir)
+	cp -r $(out_dir)/patterns/* $(loop_cache_dir)
+	cp -r $(src_zh)/* $(cache_dir) || true
 
 .PHONY: add-beep
 add-beep:
-	mkdir -p $(concat_dir)
+	mkdir -p $(loop_cache_dir)
 	cd $(src_zh); for i in *.mp3; do ffmpeg -i  "$$i" -af "apad=pad_dur=1"  /tmp/zh/"$${i%.*}_silence.mp3"; done
 	cd $(src_zh); for i in *.mp3; do ffmpeg -i /tmp/zh/"$${i%.*}_silence.mp3" -i ../../"peep_silence.mp3" -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1[out]" -map "[out]" ../concat/"$${i%.*}.mp3"; done
-	thunar  $(concat_dir)
-
-.PHONY: audio-sen
-audio-sen:
-	mkdir -p $(concat_dir)
-	cd $(src_zh); for i in *.mp3; do ffmpeg -i  "$$i" -af "apad=pad_dur=1"  /tmp/zh/"$${i%.*}_silence.mp3"; done
-	cd $(src_zh); for i in *.mp3; do ffmpeg -i $(src_en)/"$$i" -i /tmp/zh/"$${i%.*}_silence.mp3" -i ../../"peep_silence.mp3" -filter_complex "[1:a][1:a][0:a][1:a][2:a]concat=n=5:v=0:a=1[out]" -map "[out]" ../concat/"$${i%.*}.mp3"; done
-	thunar  $(concat_dir)
 
 .PHONY: clean
 clean:
@@ -77,21 +82,8 @@ segment-dia:
 
 .PHONY: open
 open:
-	@if [ -d "$(concat_dir)" ]; then \
-		thunar $(concat_dir); \
+	@if [ -d "$(loop_cache_dir)" ]; then \
+		thunar $(loop_cache_dir); \
 	else \
 		thunar $(src_zh); \
 	fi
-
-.PHONY: export
-export:
-	mkdir -p $(export_dir) || true
-	mkdir -p $(cache_dir) || true
-	@if [ -d "$(concat_dir)" ]; then \
-		cp -r $(concat_dir)/* $(export_dir)/; \
-		cp -r $(concat_dir)/* $(cache_dir)/; \
-	else \
-		cp -r $(src_zh)/* $(export_dir)/; \
-		cp -r $(src_zh)/* $(cache_dir)/; \
-	fi
-

@@ -31,14 +31,15 @@ func NewGCPClient(dir string) (*GCPDownloader, error) {
 	if err := os.MkdirAll(filepath.Join(dir, "en"), os.ModePerm); err != nil {
 		return nil, err
 	}
-	dirSlow := filepath.Join(dir, "slow")
-	if err := os.MkdirAll(dirSlow, os.ModePerm); err != nil {
-		return nil, err
-	}
+	// FIXME: remove, unused
+	// dirSlow := filepath.Join(dir, "slow")
+	// if err := os.MkdirAll(dirSlow, os.ModePerm); err != nil {
+	// 	return nil, err
+	// }
 	return &GCPDownloader{
-		dirEN:   dirEN,
-		dirZH:   dirZH,
-		dirSlow: dirSlow,
+		dirEN: dirEN,
+		dirZH: dirZH,
+		// dirSlow: dirSlow,
 	}, nil
 }
 
@@ -69,6 +70,20 @@ func (p *GCPDownloader) getOutpathSlow(query string) string {
 // download audio file from google text-to-speech api.
 func (p *GCPDownloader) FetchZH(ctx context.Context, query string) error {
 	return p.FetchWithVoice(ctx, query, GetRandomVoiceZH())
+}
+
+func (p *GCPDownloader) Fetch(ctx context.Context, query string) (string, error) {
+	resp, err := fetch(ctx, query, GetRandomVoiceEN())
+	if err != nil {
+		return "", err
+	}
+	// the resp's AudioContent is binary
+	path := p.GetOutpathZH(query)
+	err = ioutil.WriteFile(path, resp.AudioContent, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
 }
 
 func (p *GCPDownloader) FetchEN(ctx context.Context, queryZH, query string) error {

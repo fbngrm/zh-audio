@@ -1,6 +1,8 @@
 module github.com/fbngrm/zh-audio
 
-go 1.20
+go 1.23.0
+
+toolchain go1.23.4
 
 require (
 	cloud.google.com/go/texttospeech v1.7.4
@@ -14,6 +16,7 @@ require (
 	cloud.google.com/go/compute v1.23.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/longrunning v0.5.4 // indirect
+	github.com/faiface/beep v1.1.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fbngrm/zh v1.0.4 // indirect
 	github.com/fbngrm/zh-mnemonics v1.0.2 // indirect
@@ -26,6 +29,9 @@ require (
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
+	github.com/hajimehoshi/go-mp3 v0.3.0 // indirect
+	github.com/hajimehoshi/oto v1.0.1 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sahilm/fuzzy v0.1.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.47.0 // indirect
@@ -34,6 +40,9 @@ require (
 	go.opentelemetry.io/otel/metric v1.22.0 // indirect
 	go.opentelemetry.io/otel/trace v1.22.0 // indirect
 	golang.org/x/crypto v0.18.0 // indirect
+	golang.org/x/exp/shiny v0.0.0-20250218142911-aa4b98e5adaa // indirect
+	golang.org/x/image v0.14.0 // indirect
+	golang.org/x/mobile v0.0.0-20231127183840-76ac6878050a // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
