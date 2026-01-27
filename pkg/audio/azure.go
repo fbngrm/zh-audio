@@ -148,6 +148,8 @@ func (c *AzureClient) fetch(ctx context.Context, query string, retryCount int) (
 		s := buf.String()
 		if s == "Quota Exceeded" || resp.StatusCode == http.StatusTooManyRequests {
 			return c.fetch(ctx, query, retryCount+1)
+		} else {
+			fmt.Println(query)
 		}
 	}
 

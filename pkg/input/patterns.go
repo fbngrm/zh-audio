@@ -22,6 +22,7 @@ type Grammar struct {
 	Structure       string    `json:"structure"`
 	Examples        []Example `json:"examples"`
 	Summary         []string  `json:"summary"`
+	English         string    `json:"english"`
 }
 
 type PatternProcessor struct {
@@ -75,50 +76,65 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 		cachePath := p.cache.GetCachePath(pa.Pattern)
 		tmpFile := audio.GetFilename(pa.Pattern)
 		if !p.cache.IsInCache(cachePath) {
-			query := cleanQuery(p.azureDownloader.PrepareQueryWithRandomVoice(pa.Pattern, "0ms", true))
+			query := cleanQuery(p.azureDownloader.PrepareQueryWithRandomVoice(pa.Pattern, "0ms", false))
 			slog.Debug("pattern not in cache, download with azure", "query", query)
 			tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
 			if err != nil {
 				return err
 			}
 			p.concatenator.AddWithPause(tmpPath, 1500)
-			p.concatenator.AddWithPause(tmpPath, 1500)
 		} else {
-			p.concatenator.AddWithPause(cachePath, 1500)
 			p.concatenator.AddWithPause(cachePath, 1500)
 		}
 
-		note := removeDots(removeBracketsInclText(pa.Note))
-		cachePath = p.cache.GetCachePath(note)
-		tmpFile = audio.GetFilename(note)
+		// note := removeDots(removeBracketsInclText(pa.Note))
+		// cachePath = p.cache.GetCachePath(note)
+		// tmpFile = audio.GetFilename(note)
+		// if !p.cache.IsInCache(cachePath) {
+		// 	query := cleanQuery(p.replaceTextWithAudio(note, "0ms"))
+		// 	slog.Debug("note not in cache, download with azure", "query", query)
+		// 	tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	p.concatenator.AddWithPause(tmpPath, 200)
+		// } else {
+		// 	p.concatenator.AddWithPause(cachePath, 200)
+		// }
+
+		// structure := removeAllQuotes(removeBracketsInclText(replaceSpecialChars(pa.Structure)))
+		// filename := strings.ReplaceAll(pa.Pattern, "/", "-") + "_structure"
+		// cachePath = p.cache.GetCachePath(filename)
+		// tmpFile = audio.GetFilename(filename)
+		// if !p.cache.IsInCache(cachePath) {
+		// 	query := cleanQuery(p.replaceTextWithAudio(structure, "0ms"))
+		// 	slog.Debug("structure not in cache, download with azure", "query", query)
+		// 	tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+		// 	if err != nil {
+		// 		slog.Error("fetch pattern structure", "err", err)
+		// 		return err
+		// 	}
+		// 	p.concatenator.AddWithPause(tmpPath, 500)
+		// } else {
+		// 	p.concatenator.AddWithPause(cachePath, 500)
+		// }
+
+		eng := pa.English
+		cachePath = p.cache.GetCachePath(eng)
+		tmpFile = audio.GetFilename(eng)
 		if !p.cache.IsInCache(cachePath) {
-			query := cleanQuery(p.replaceTextWithAudio(note, "0ms"))
-			slog.Debug("note not in cache, download with azure", "query", query)
+			query := p.azureDownloader.PrepareEnglishQuery(eng, "0ms")
+			slog.Debug("english not in cache, download with azure", "query", query)
 			tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
 			if err != nil {
 				return err
 			}
-			p.concatenator.AddWithPause(tmpPath, 200)
+			p.concatenator.AddWithPause(tmpPath, 1000)
 		} else {
-			p.concatenator.AddWithPause(cachePath, 200)
+			p.concatenator.AddWithPause(cachePath, 1000)
 		}
 
-		structure := removeAllQuotes(removeBracketsInclText(replaceSpecialChars(pa.Structure)))
-		cachePath = p.cache.GetCachePath(structure)
-		tmpFile = audio.GetFilename(structure)
-		if !p.cache.IsInCache(cachePath) {
-			query := cleanQuery(p.replaceTextWithAudio(structure, "0ms"))
-			slog.Debug("structure not in cache, download with azure", "query", query)
-			tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
-			if err != nil {
-				return err
-			}
-			p.concatenator.AddWithPause(tmpPath, 500)
-		} else {
-			p.concatenator.AddWithPause(cachePath, 500)
-		}
-
-		eng := "Here are a few examples"
+		eng = "Here are a few examples"
 		cachePath = p.cache.GetCachePath(eng)
 		tmpFile = audio.GetFilename(eng)
 		if !p.cache.IsInCache(cachePath) {
@@ -180,35 +196,35 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 			}
 		}
 
-		eng = "The most important points when using the pattern are:"
-		cachePath = p.cache.GetCachePath(eng)
-		tmpFile = audio.GetFilename(eng)
-		if !p.cache.IsInCache(cachePath) {
-			query := p.azureDownloader.PrepareEnglishQuery(eng, "0ms")
-			slog.Debug("english not in cache, download with azure", "query", query)
-			tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
-			if err != nil {
-				return err
-			}
-			p.concatenator.AddWithPause(tmpPath, 2000)
-		} else {
-			p.concatenator.AddWithPause(cachePath, 2000)
-		}
+		// eng = "The most important points when using the pattern are:"
+		// cachePath = p.cache.GetCachePath(eng)
+		// tmpFile = audio.GetFilename(eng)
+		// if !p.cache.IsInCache(cachePath) {
+		// 	query := p.azureDownloader.PrepareEnglishQuery(eng, "0ms")
+		// 	slog.Debug("english not in cache, download with azure", "query", query)
+		// 	tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	p.concatenator.AddWithPause(tmpPath, 2000)
+		// } else {
+		// 	p.concatenator.AddWithPause(cachePath, 2000)
+		// }
 
-		eng = strings.Join(pa.Summary, "\n")
-		cachePath = p.cache.GetCachePath(eng)
-		tmpFile = audio.GetFilename(eng)
-		if !p.cache.IsInCache(cachePath) {
-			query := p.azureDownloader.PrepareEnglishQuery(eng, "0ms")
-			slog.Debug("english not in cache, download with azure", "query", query)
-			tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
-			if err != nil {
-				return err
-			}
-			p.concatenator.AddWithPause(tmpPath, 1500)
-		} else {
-			p.concatenator.AddWithPause(cachePath, 1500)
-		}
+		// eng = strings.Join(pa.Summary, "\n")
+		// cachePath = p.cache.GetCachePath(eng)
+		// tmpFile = audio.GetFilename(eng)
+		// if !p.cache.IsInCache(cachePath) {
+		// 	query := p.azureDownloader.PrepareEnglishQuery(eng, "0ms")
+		// 	slog.Debug("english not in cache, download with azure", "query", query)
+		// 	tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	p.concatenator.AddWithPause(tmpPath, 1500)
+		// } else {
+		// 	p.concatenator.AddWithPause(cachePath, 1500)
+		// }
 
 		// add beep
 		cachePath = p.cache.GetCachePath("peep")
@@ -223,6 +239,7 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 			continue
 		}
 		slog.Debug("concat files", "pattern", pa.Pattern)
+		p.concatenator.Reset()
 	}
 	return nil
 }

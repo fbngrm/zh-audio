@@ -22,11 +22,12 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 		return err
 	}
 	for _, wd := range words {
-		if len(wd.HSK) == 0 && len(wd.Cedict) == 0 {
+		if len(wd.HSK) == 0 && len(wd.Cedict) == 0 && len(wd.Translation) == 0 {
 			return fmt.Errorf("word %s has no translation", wd.Chinese)
 		}
 
 		query := ""
+		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
 		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
 		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
 
@@ -43,8 +44,11 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 			query += w.AzureDownloader.PrepareEnglishQuery("The tones are "+tones, "1000ms")
 		}
 		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
+		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
+		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
+		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
 
-		wordEng := ""
+		wordEng := wd.Translation
 		if len(wd.HSK) != 0 {
 			for i, h := range wd.HSK {
 				wordEng += h.HSKEnglish + " "
@@ -64,7 +68,6 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 			}
 		}
 		query += w.replaceTextWithAudio(wordEng, "1000ms")
-		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1500ms", true)
 		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1500ms", true)
 		query += w.replaceTextWithAudio(removeWrappingSingleQuotes(wd.Note), "200ms")
 		query += w.AzureDownloader.PrepareEnglishQuery("Here are a few example sentences", "1000ms")

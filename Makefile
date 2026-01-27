@@ -10,11 +10,16 @@ loop_cache_dir=/home/f/Dropbox/zh/cache/audio-loops/
 export AUDIO_CACHE_DIR=$(cache_dir)
 
 .PHONY: w
-w: clean words add-beep
+w: clean words
 
 .PHONY: words
 words:
 	go run cmd/main.go -src $(src) -w
+	mkdir -p loop_cache_dir || true
+	mkdir -p $(export_dir) || true
+	cp -r $(out_dir)/zh/* $(export_dir)
+	cp -r $(out_dir)/zh* $(loop_cache_dir)
+	cp -r $(src_zh)/* $(cache_dir) || true
 
 .PHONY: d
 d: clean segment-dia dialogs audio add-beep
@@ -58,7 +63,7 @@ patterns:
 add-beep:
 	mkdir -p $(loop_cache_dir)
 	cd $(src_zh); for i in *.mp3; do ffmpeg -i  "$$i" -af "apad=pad_dur=1"  /tmp/zh/"$${i%.*}_silence.mp3"; done
-	cd $(src_zh); for i in *.mp3; do ffmpeg -i /tmp/zh/"$${i%.*}_silence.mp3" -i ../../"peep_silence.mp3" -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1[out]" -map "[out]" ../concat/"$${i%.*}.mp3"; done
+	cd $(src_zh); for i in *.mp3; do ffmpeg -i /tmp/zh/"$${i%.*}_silence.mp3" -i ../../"peep_silence.mp3" -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1[out]" -map "[out]" ../zh/"$${i%.*}.mp3"; done
 
 .PHONY: clean
 clean:
@@ -87,3 +92,9 @@ open:
 	else \
 		thunar $(src_zh); \
 	fi
+
+.PHONY: reduce-audio-size
+reduce-audio-size:
+	for file in *.mp3; do
+		ffmpeg -i "$file" -b:a 128k -ar 44100 "compressed_${file}"
+	done

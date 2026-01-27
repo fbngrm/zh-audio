@@ -23,6 +23,11 @@ func NewConcatenator() *Concatenator {
 	}
 }
 
+func (c *Concatenator) Reset() {
+	c.Files = make([]string, 0)
+	c.Pauses = make([]int, 0)
+}
+
 func (c *Concatenator) AddWithPause(file string, pause int) {
 	c.Files = append(c.Files, file)
 	c.Pauses = append(c.Pauses, pause)
