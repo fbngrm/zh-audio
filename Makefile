@@ -59,6 +59,13 @@ patterns:
 	cp -r $(out_dir)/patterns/* $(loop_cache_dir)
 	cp -r $(src_zh)/* $(cache_dir) || true
 
+.PHONY: u
+u: usecases
+
+.PHONY: usecases
+usecases:
+	go run cmd/main.go -src $(src) -u
+
 .PHONY: add-beep
 add-beep:
 	mkdir -p $(loop_cache_dir)

@@ -11,7 +11,7 @@ import (
 
 var out = "./out"
 var in string
-var isDialog, isSentences, isPatterns, isClozes, isWords bool
+var isDialog, isSentences, isPatterns, isClozes, isWords, isUseCases bool
 var key string
 var ignoreChars = []string{"!", "！", "？", "?", "，", ",", ".", "。", "", " ", "、"}
 
@@ -22,6 +22,7 @@ func main() {
 	flag.BoolVar(&isSentences, "s", false, "is this a sentence input")
 	flag.BoolVar(&isClozes, "c", false, "is this a cloze input")
 	flag.BoolVar(&isWords, "w", false, "is this a words input")
+	flag.BoolVar(&isUseCases, "u", false, "is this a use case input")
 	flag.Parse()
 
 	if in == "" {
@@ -114,6 +115,12 @@ func main() {
 			AzureDownloader: azureClient,
 		}
 		if err := wordsProcessor.GetAzureAudio(in); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if isUseCases {
+		useCaseProcessor := input.NewUseCaseProcessor(azureClient, "../stanford-segmenter")
+		if err := useCaseProcessor.GenerateAudio(in); err != nil {
 			log.Fatal(err)
 		}
 	}

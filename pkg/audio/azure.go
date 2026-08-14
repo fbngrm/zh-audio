@@ -161,6 +161,21 @@ func (c *AzureClient) PrepareQueryWithRandomVoice(text, pause string, addSplitAu
 	return c.PrepareQuery(text, speaker, pause, addSplitAudio)
 }
 
+// PrepareQueryRaw builds a single-voice SSML query without stripping
+// whitespace from text, so spaces are rendered as pauses between words by
+// Azure's TTS engine.
+func (c *AzureClient) PrepareQueryRaw(text, speaker, pause string) string {
+	slog.Debug("prepare azure raw query", "voice", speaker, "text", text)
+	queryFmt := `
+    <voice name="%s">
+        <mstts:silence  type="Tailing-exact" value="%s"/>
+        <prosody rate="%s">
+		    %s
+        </prosody>
+    </voice>`
+	return fmt.Sprintf(queryFmt, speaker, pause, rate, text)
+}
+
 func (c *AzureClient) PrepareEnglishQuery(text, pause string) string {
 	speaker := "en-US-AvaMultilingualNeural"
 	slog.Debug("prepare azure en query", "voice", speaker, "text", text)
