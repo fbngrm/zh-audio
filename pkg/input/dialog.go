@@ -25,8 +25,8 @@ type RawDialog struct {
 }
 
 type DialogProcessor struct {
-	GCPDownloader   *audio.GCPDownloader
-	AzureDownloader *audio.AzureClient
+	GCPDownloader *audio.GCPDownloader
+	TTSDownloader *audio.TTSClient
 }
 
 func (p *DialogProcessor) GetAzureAudio(path string) error {
@@ -47,10 +47,10 @@ func (p *DialogProcessor) GetAzureAudio(path string) error {
 		if len(dialog.Speakers) != 0 {
 			query = p.prepareQuery(dialog)
 		} else {
-			query = p.AzureDownloader.PrepareQueryWithRandomVoice(dialogText, "0.0", false)
+			query = p.TTSDownloader.PrepareQueryWithRandomVoice(dialogText, "0.0", false)
 		}
 
-		if _, err := p.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(dialogText)); err != nil {
+		if _, err := p.TTSDownloader.Fetch(context.Background(), query, audio.GetFilename(dialogText)); err != nil {
 			return err
 		}
 	}
@@ -59,13 +59,13 @@ func (p *DialogProcessor) GetAzureAudio(path string) error {
 
 func (p *DialogProcessor) prepareQuery(dialog RawDialog) string {
 	query := ""
-	voices := p.AzureDownloader.GetVoices(dialog.Speakers)
+	voices := p.TTSDownloader.GetVoices(dialog.Speakers)
 	for _, line := range dialog.Lines {
 		voice, ok := voices[line.Speaker]
 		if !ok {
 			fmt.Printf("could not find voice for speaker: %s\n", line.Speaker)
 		}
-		query += p.AzureDownloader.PrepareQuery(line.Text, voice, "0.0", false)
+		query += p.TTSDownloader.PrepareQuery(line.Text, voice, "0.0", false)
 	}
 	return query
 }

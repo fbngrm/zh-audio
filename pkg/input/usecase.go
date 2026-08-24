@@ -18,14 +18,14 @@ type UseCaseExample struct {
 }
 
 type UseCaseProcessor struct {
-	azureDownloader *audio.AzureClient
-	segmenterDir    string
+	ttsDownloader *audio.TTSClient
+	segmenterDir  string
 }
 
-func NewUseCaseProcessor(downloader *audio.AzureClient, segmenterDir string) *UseCaseProcessor {
+func NewUseCaseProcessor(downloader *audio.TTSClient, segmenterDir string) *UseCaseProcessor {
 	return &UseCaseProcessor{
-		azureDownloader: downloader,
-		segmenterDir:    segmenterDir,
+		ttsDownloader: downloader,
+		segmenterDir:  segmenterDir,
 	}
 }
 
@@ -49,21 +49,21 @@ func (p *UseCaseProcessor) GenerateAudio(path string) error {
 			return err
 		}
 
-		voice := p.azureDownloader.GetRandomVoice()
+		voice := p.ttsDownloader.GetRandomVoice()
 
-		regularQuery := p.azureDownloader.PrepareQuery(chinese, voice, "0ms", false)
-		if _, err := p.azureDownloader.Fetch(context.Background(), regularQuery, audio.GetFilename(chinese)); err != nil {
+		regularQuery := p.ttsDownloader.PrepareQuery(chinese, voice, "0ms", false)
+		if _, err := p.ttsDownloader.Fetch(context.Background(), regularQuery, audio.GetFilename(chinese)); err != nil {
 			return err
 		}
 
 		segmentedFile := strings.TrimSuffix(audio.GetFilename(chinese), ".mp3") + "_segmented.mp3"
-		segmentedQuery := p.azureDownloader.PrepareQueryRaw(segmented, voice, "0ms")
-		if _, err := p.azureDownloader.Fetch(context.Background(), segmentedQuery, segmentedFile); err != nil {
+		segmentedQuery := p.ttsDownloader.PrepareQueryRaw(segmented, voice, "0ms")
+		if _, err := p.ttsDownloader.Fetch(context.Background(), segmentedQuery, segmentedFile); err != nil {
 			return err
 		}
 
-		englishQuery := p.azureDownloader.PrepareEnglishQuery(ex.English, "0ms")
-		if _, err := p.azureDownloader.Fetch(context.Background(), englishQuery, audio.GetFilename(ex.English)); err != nil {
+		englishQuery := p.ttsDownloader.PrepareEnglishQuery(ex.English, "0ms")
+		if _, err := p.ttsDownloader.Fetch(context.Background(), englishQuery, audio.GetFilename(ex.English)); err != nil {
 			return err
 		}
 

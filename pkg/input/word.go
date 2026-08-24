@@ -13,7 +13,7 @@ import (
 )
 
 type WordProcessor struct {
-	AzureDownloader *audio.AzureClient
+	TTSDownloader *audio.TTSClient
 }
 
 func (w *WordProcessor) GetAzureAudio(path string) error {
@@ -27,9 +27,9 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 		}
 
 		query := ""
-		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
-		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
-		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
+		query += w.TTSDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
+		query += w.TTSDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
+		query += w.TTSDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
 
 		tones := ""
 		for i, t := range wd.Tones {
@@ -39,14 +39,14 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 			}
 		}
 		if len(wd.Tones) == 1 {
-			query += w.AzureDownloader.PrepareEnglishQuery("The tone is the "+tones, "1000ms")
+			query += w.TTSDownloader.PrepareEnglishQuery("The tone is the "+tones, "1000ms")
 		} else if len(wd.Tones) > 1 {
-			query += w.AzureDownloader.PrepareEnglishQuery("The tones are "+tones, "1000ms")
+			query += w.TTSDownloader.PrepareEnglishQuery("The tones are "+tones, "1000ms")
 		}
-		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
-		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
-		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
-		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
+		query += w.TTSDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
+		query += w.TTSDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
+		query += w.TTSDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
+		query += w.TTSDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1000ms", true)
 
 		wordEng := wd.Translation
 		if len(wd.HSK) != 0 {
@@ -68,21 +68,21 @@ func (w *WordProcessor) GetAzureAudio(path string) error {
 			}
 		}
 		query += w.replaceTextWithAudio(wordEng, "1000ms")
-		query += w.AzureDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1500ms", true)
+		query += w.TTSDownloader.PrepareQueryWithRandomVoice(wd.Chinese, "1500ms", true)
 		query += w.replaceTextWithAudio(removeWrappingSingleQuotes(wd.Note), "200ms")
-		query += w.AzureDownloader.PrepareEnglishQuery("Here are a few example sentences", "1000ms")
+		query += w.TTSDownloader.PrepareEnglishQuery("Here are a few example sentences", "1000ms")
 
 		for _, e := range wd.Examples {
-			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
-			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
-			query += w.AzureDownloader.PrepareEnglishQuery(removeWrappingSingleQuotes(e.English), "2000ms")
-			query += w.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += w.TTSDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += w.TTSDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += w.TTSDownloader.PrepareEnglishQuery(removeWrappingSingleQuotes(e.English), "2000ms")
+			query += w.TTSDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 		}
 
 		query = cleanQuery(query)
 		fmt.Println(strings.Count(query, "<voice"))
 		// fmt.Println(query)
-		if _, err := w.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(wd.Chinese)); err != nil {
+		if _, err := w.TTSDownloader.Fetch(context.Background(), query, audio.GetFilename(wd.Chinese)); err != nil {
 			return err
 		}
 	}
@@ -97,13 +97,13 @@ func (w *WordProcessor) replaceTextWithAudio(text, pause string) string {
 
 	// Replace English text with audio
 	text = englishRe.ReplaceAllStringFunc(text, func(englishText string) string {
-		audio := w.AzureDownloader.PrepareEnglishQuery(englishText, pause)
+		audio := w.TTSDownloader.PrepareEnglishQuery(englishText, pause)
 		return audio
 	})
 
 	// Replace Chinese text with audio
 	text = chineseRe.ReplaceAllStringFunc(text, func(chineseText string) string {
-		audio := w.AzureDownloader.PrepareQueryWithRandomVoice(chineseText, pause, false)
+		audio := w.TTSDownloader.PrepareQueryWithRandomVoice(chineseText, pause, false)
 		return audio
 	})
 

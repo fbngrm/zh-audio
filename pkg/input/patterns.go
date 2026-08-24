@@ -26,22 +26,22 @@ type Grammar struct {
 }
 
 type PatternProcessor struct {
-	azureDownloader *audio.AzureClient
-	concatenator    *audio.Concatenator
-	cache           *audio.Cache
-	outDir          string
+	ttsDownloader *audio.TTSClient
+	concatenator  *audio.Concatenator
+	cache         *audio.Cache
+	outDir        string
 }
 
-func NewPatternProcessor(downloader *audio.AzureClient, concatenator *audio.Concatenator, cache *audio.Cache, outDir string) (*PatternProcessor, error) {
+func NewPatternProcessor(downloader *audio.TTSClient, concatenator *audio.Concatenator, cache *audio.Cache, outDir string) (*PatternProcessor, error) {
 	out := filepath.Join(outDir, "patterns")
 	if err := os.MkdirAll(out, os.ModePerm); err != nil {
 		return nil, err
 	}
 	return &PatternProcessor{
-		azureDownloader: downloader,
-		concatenator:    concatenator,
-		cache:           cache,
-		outDir:          out,
+		ttsDownloader: downloader,
+		concatenator:  concatenator,
+		cache:         cache,
+		outDir:        out,
 	}, nil
 }
 
@@ -53,13 +53,13 @@ func (p *PatternProcessor) replaceTextWithAudio(text, pause string) string {
 
 	// Replace English text with audio
 	text = englishRe.ReplaceAllStringFunc(text, func(englishText string) string {
-		audio := p.azureDownloader.PrepareEnglishQuery(englishText, pause)
+		audio := p.ttsDownloader.PrepareEnglishQuery(englishText, pause)
 		return audio
 	})
 
 	// Replace Chinese text with audio
 	text = chineseRe.ReplaceAllStringFunc(text, func(chineseText string) string {
-		audio := p.azureDownloader.PrepareQueryWithRandomVoice(chineseText, pause, false)
+		audio := p.ttsDownloader.PrepareQueryWithRandomVoice(chineseText, pause, false)
 		return audio
 	})
 
@@ -76,9 +76,9 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 		cachePath := p.cache.GetCachePath(pa.Pattern)
 		tmpFile := audio.GetFilename(pa.Pattern)
 		if !p.cache.IsInCache(cachePath) {
-			query := cleanQuery(p.azureDownloader.PrepareQueryWithRandomVoice(pa.Pattern, "0ms", false))
+			query := cleanQuery(p.ttsDownloader.PrepareQueryWithRandomVoice(pa.Pattern, "0ms", false))
 			slog.Debug("pattern not in cache, download with azure", "query", query)
-			tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+			tmpPath, err := p.ttsDownloader.Fetch(context.Background(), query, tmpFile)
 			if err != nil {
 				return err
 			}
@@ -93,7 +93,7 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 		// if !p.cache.IsInCache(cachePath) {
 		// 	query := cleanQuery(p.replaceTextWithAudio(note, "0ms"))
 		// 	slog.Debug("note not in cache, download with azure", "query", query)
-		// 	tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+		// 	tmpPath, err := p.ttsDownloader.Fetch(context.Background(), query, tmpFile)
 		// 	if err != nil {
 		// 		return err
 		// 	}
@@ -109,7 +109,7 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 		// if !p.cache.IsInCache(cachePath) {
 		// 	query := cleanQuery(p.replaceTextWithAudio(structure, "0ms"))
 		// 	slog.Debug("structure not in cache, download with azure", "query", query)
-		// 	tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+		// 	tmpPath, err := p.ttsDownloader.Fetch(context.Background(), query, tmpFile)
 		// 	if err != nil {
 		// 		slog.Error("fetch pattern structure", "err", err)
 		// 		return err
@@ -123,9 +123,9 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 		cachePath = p.cache.GetCachePath(eng)
 		tmpFile = audio.GetFilename(eng)
 		if !p.cache.IsInCache(cachePath) {
-			query := p.azureDownloader.PrepareEnglishQuery(eng, "0ms")
+			query := p.ttsDownloader.PrepareEnglishQuery(eng, "0ms")
 			slog.Debug("english not in cache, download with azure", "query", query)
-			tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+			tmpPath, err := p.ttsDownloader.Fetch(context.Background(), query, tmpFile)
 			if err != nil {
 				return err
 			}
@@ -138,9 +138,9 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 		cachePath = p.cache.GetCachePath(eng)
 		tmpFile = audio.GetFilename(eng)
 		if !p.cache.IsInCache(cachePath) {
-			query := p.azureDownloader.PrepareEnglishQuery(eng, "0ms")
+			query := p.ttsDownloader.PrepareEnglishQuery(eng, "0ms")
 			slog.Debug("english not in cache, download with azure", "query", query)
-			tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+			tmpPath, err := p.ttsDownloader.Fetch(context.Background(), query, tmpFile)
 			if err != nil {
 				return err
 			}
@@ -153,9 +153,9 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 			cachePath := p.cache.GetCachePath(e.Chinese)
 			tmpFile := audio.GetFilename(e.Chinese)
 			if !p.cache.IsInCache(cachePath) {
-				query := cleanQuery(p.azureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "0ms", true))
+				query := cleanQuery(p.ttsDownloader.PrepareQueryWithRandomVoice(e.Chinese, "0ms", true))
 				slog.Debug("example not in cache, download with azure", "query", query)
-				tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+				tmpPath, err := p.ttsDownloader.Fetch(context.Background(), query, tmpFile)
 				if err != nil {
 					return err
 				}
@@ -170,9 +170,9 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 			cachePath = p.cache.GetCachePath(eng)
 			tmpFile = audio.GetFilename(eng)
 			if !p.cache.IsInCache(cachePath) {
-				query := p.azureDownloader.PrepareEnglishQuery(eng, "0ms")
+				query := p.ttsDownloader.PrepareEnglishQuery(eng, "0ms")
 				slog.Debug("english not in cache, download with azure", "query", query)
-				tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+				tmpPath, err := p.ttsDownloader.Fetch(context.Background(), query, tmpFile)
 				if err != nil {
 					return err
 				}
@@ -184,9 +184,9 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 			cachePath = p.cache.GetCachePath(e.Chinese)
 			tmpFile = audio.GetFilename(e.Chinese)
 			if !p.cache.IsInCache(cachePath) {
-				query := cleanQuery(p.azureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "0ms", true))
+				query := cleanQuery(p.ttsDownloader.PrepareQueryWithRandomVoice(e.Chinese, "0ms", true))
 				slog.Debug("example not in cache, download with azure", "query", query)
-				tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+				tmpPath, err := p.ttsDownloader.Fetch(context.Background(), query, tmpFile)
 				if err != nil {
 					return err
 				}
@@ -200,9 +200,9 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 		// cachePath = p.cache.GetCachePath(eng)
 		// tmpFile = audio.GetFilename(eng)
 		// if !p.cache.IsInCache(cachePath) {
-		// 	query := p.azureDownloader.PrepareEnglishQuery(eng, "0ms")
+		// 	query := p.ttsDownloader.PrepareEnglishQuery(eng, "0ms")
 		// 	slog.Debug("english not in cache, download with azure", "query", query)
-		// 	tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+		// 	tmpPath, err := p.ttsDownloader.Fetch(context.Background(), query, tmpFile)
 		// 	if err != nil {
 		// 		return err
 		// 	}
@@ -215,9 +215,9 @@ func (p *PatternProcessor) ConcatAudioFromCache(path string) error {
 		// cachePath = p.cache.GetCachePath(eng)
 		// tmpFile = audio.GetFilename(eng)
 		// if !p.cache.IsInCache(cachePath) {
-		// 	query := p.azureDownloader.PrepareEnglishQuery(eng, "0ms")
+		// 	query := p.ttsDownloader.PrepareEnglishQuery(eng, "0ms")
 		// 	slog.Debug("english not in cache, download with azure", "query", query)
-		// 	tmpPath, err := p.azureDownloader.Fetch(context.Background(), query, tmpFile)
+		// 	tmpPath, err := p.ttsDownloader.Fetch(context.Background(), query, tmpFile)
 		// 	if err != nil {
 		// 		return err
 		// 	}
@@ -251,22 +251,22 @@ func (p *PatternProcessor) GetAzureAudio(path string) error {
 	}
 	for _, pa := range patterns {
 		note := removeDots(removeBracketsInclText(pa.Note))
-		query := p.azureDownloader.PrepareQueryWithRandomVoice(pa.Pattern, "1500ms", true)
-		query += p.azureDownloader.PrepareQueryWithRandomVoice(pa.Pattern, "1500ms", true)
+		query := p.ttsDownloader.PrepareQueryWithRandomVoice(pa.Pattern, "1500ms", true)
+		query += p.ttsDownloader.PrepareQueryWithRandomVoice(pa.Pattern, "1500ms", true)
 		query += p.replaceTextWithAudio(note, "200ms")
 		query += p.replaceTextWithAudio(removeAllQuotes(removeBracketsInclText(replaceSpecialChars(pa.Structure))), "500ms")
-		query += p.azureDownloader.PrepareEnglishQuery("Here are a few examples", "1000ms")
+		query += p.ttsDownloader.PrepareEnglishQuery("Here are a few examples", "1000ms")
 		for _, e := range pa.Examples {
-			query += p.azureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
-			query += p.azureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
-			query += p.azureDownloader.PrepareEnglishQuery(removeWrappingSingleQuotes(e.English), "2000ms")
-			query += p.azureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += p.ttsDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += p.ttsDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += p.ttsDownloader.PrepareEnglishQuery(removeWrappingSingleQuotes(e.English), "2000ms")
+			query += p.ttsDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 		}
-		query += p.azureDownloader.PrepareEnglishQuery("The most important points when using the pattern are", "200ms")
-		query += p.azureDownloader.PrepareEnglishQuery(strings.Join(pa.Summary, "\n"), "1500ms")
+		query += p.ttsDownloader.PrepareEnglishQuery("The most important points when using the pattern are", "200ms")
+		query += p.ttsDownloader.PrepareEnglishQuery(strings.Join(pa.Summary, "\n"), "1500ms")
 		query = cleanQuery(query)
 		fmt.Println(query)
-		if _, err := p.azureDownloader.Fetch(context.Background(), query, audio.GetFilename(pa.Pattern)); err != nil {
+		if _, err := p.ttsDownloader.Fetch(context.Background(), query, audio.GetFilename(pa.Pattern)); err != nil {
 			return err
 		}
 	}

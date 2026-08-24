@@ -46,7 +46,7 @@ type Cloze struct {
 }
 
 type ClozeProcessor struct {
-	AzureDownloader *audio.AzureClient
+	TTSDownloader *audio.TTSClient
 }
 
 func (c *ClozeProcessor) GetAzureAudio(path string) error {
@@ -60,8 +60,8 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 		}
 
 		query := ""
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "2000ms", false)
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1000ms", false)
+		query += c.TTSDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "2000ms", false)
+		query += c.TTSDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1000ms", false)
 
 		tones := ""
 		for i, t := range cl.Word.Tones {
@@ -71,11 +71,11 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 			}
 		}
 		if len(cl.Word.Tones) == 1 {
-			query += c.AzureDownloader.PrepareEnglishQuery("The tone is the "+tones, "1000ms")
+			query += c.TTSDownloader.PrepareEnglishQuery("The tone is the "+tones, "1000ms")
 		} else if len(cl.Word.Tones) > 1 {
-			query += c.AzureDownloader.PrepareEnglishQuery("The tones are "+tones, "1000ms")
+			query += c.TTSDownloader.PrepareEnglishQuery("The tones are "+tones, "1000ms")
 		}
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1000ms", false)
+		query += c.TTSDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1000ms", false)
 
 		wordEng := ""
 		if len(cl.Word.HSK) != 0 {
@@ -97,26 +97,26 @@ func (c *ClozeProcessor) GetAzureAudio(path string) error {
 			}
 		}
 		query += c.replaceTextWithAudio(removeWrappingSingleQuotes(wordEng), "1000ms")
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1500ms", true)
+		query += c.TTSDownloader.PrepareQueryWithRandomVoice(cl.Word.Chinese, "1500ms", true)
 		query += c.replaceTextWithAudio(removeWrappingSingleQuotes(cl.Word.Note), "200ms")
-		query += c.AzureDownloader.PrepareEnglishQuery("Here are a few example sentences", "1000ms")
+		query += c.TTSDownloader.PrepareEnglishQuery("Here are a few example sentences", "1000ms")
 
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
-		query += c.AzureDownloader.PrepareEnglishQuery(cl.English, "2000ms")
-		query += c.AzureDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
+		query += c.TTSDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
+		query += c.TTSDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
+		query += c.TTSDownloader.PrepareEnglishQuery(cl.English, "2000ms")
+		query += c.TTSDownloader.PrepareQueryWithRandomVoice(cl.SentenceBack, "2000ms", true)
 
 		for _, e := range cl.Word.Examples {
-			query += c.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
-			query += c.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
-			query += c.AzureDownloader.PrepareEnglishQuery(removeWrappingSingleQuotes(e.English), "2000ms")
-			query += c.AzureDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += c.TTSDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += c.TTSDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
+			query += c.TTSDownloader.PrepareEnglishQuery(removeWrappingSingleQuotes(e.English), "2000ms")
+			query += c.TTSDownloader.PrepareQueryWithRandomVoice(e.Chinese, "2000ms", true)
 		}
 
 		query = cleanQuery(query)
 		fmt.Println(strings.Count(query, "<voice"))
 		// fmt.Println(query)
-		if _, err := c.AzureDownloader.Fetch(context.Background(), query, audio.GetFilename(cl.Filename)); err != nil {
+		if _, err := c.TTSDownloader.Fetch(context.Background(), query, audio.GetFilename(cl.Filename)); err != nil {
 			return err
 		}
 	}
@@ -131,13 +131,13 @@ func (c *ClozeProcessor) replaceTextWithAudio(text, pause string) string {
 
 	// Replace English text with audio
 	text = englishRe.ReplaceAllStringFunc(text, func(englishText string) string {
-		audio := c.AzureDownloader.PrepareEnglishQuery(englishText, pause)
+		audio := c.TTSDownloader.PrepareEnglishQuery(englishText, pause)
 		return audio
 	})
 
 	// Replace Chinese text with audio
 	text = chineseRe.ReplaceAllStringFunc(text, func(chineseText string) string {
-		audio := c.AzureDownloader.PrepareQueryWithRandomVoice(chineseText, pause, false)
+		audio := c.TTSDownloader.PrepareQueryWithRandomVoice(chineseText, pause, false)
 		return audio
 	})
 

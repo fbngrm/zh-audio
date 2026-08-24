@@ -13,15 +13,15 @@ import (
 )
 
 type SentenceProcessor struct {
-	gcpDownloader   *audio.GCPDownloader
-	azureDownloader *audio.AzureClient
-	concatenator    *audio.Concatenator
-	cache           *audio.Cache
-	outDir          string
+	gcpDownloader *audio.GCPDownloader
+	ttsDownloader *audio.TTSClient
+	concatenator  *audio.Concatenator
+	cache         *audio.Cache
+	outDir        string
 }
 
 func NewSentenceProcessor(
-	downloader *audio.AzureClient,
+	downloader *audio.TTSClient,
 	gcpDownloader *audio.GCPDownloader,
 	concatenator *audio.Concatenator,
 	cache *audio.Cache,
@@ -32,11 +32,11 @@ func NewSentenceProcessor(
 		return nil, err
 	}
 	return &SentenceProcessor{
-		gcpDownloader:   gcpDownloader,
-		azureDownloader: downloader,
-		concatenator:    concatenator,
-		cache:           cache,
-		outDir:          out,
+		gcpDownloader: gcpDownloader,
+		ttsDownloader: downloader,
+		concatenator:  concatenator,
+		cache:         cache,
+		outDir:        out,
 	}, nil
 }
 
@@ -54,8 +54,8 @@ func (s *SentenceProcessor) ConcatAudioFromCache(path string) error {
 		cachePath := s.cache.GetCachePath(sentence)
 		tmpFile := audio.GetFilename(sentence)
 		if !s.cache.IsInCache(cachePath) {
-			query := s.azureDownloader.PrepareQueryWithRandomVoice(sentence, "0ms", true)
-			tmpPath, err := s.azureDownloader.Fetch(
+			query := s.ttsDownloader.PrepareQueryWithRandomVoice(sentence, "0ms", true)
+			tmpPath, err := s.ttsDownloader.Fetch(
 				context.Background(),
 				query,
 				tmpFile)
@@ -84,8 +84,8 @@ func (s *SentenceProcessor) ConcatAudioFromCache(path string) error {
 		cachePath = s.cache.GetCachePath(sentence)
 		tmpFile = audio.GetFilename(sentence)
 		if !s.cache.IsInCache(cachePath) {
-			query := s.azureDownloader.PrepareQueryWithRandomVoice(sentence, "0ms", true)
-			tmpPath, err := s.azureDownloader.Fetch(
+			query := s.ttsDownloader.PrepareQueryWithRandomVoice(sentence, "0ms", true)
+			tmpPath, err := s.ttsDownloader.Fetch(
 				context.Background(),
 				query,
 				tmpFile)
@@ -119,8 +119,8 @@ func (p *SentenceProcessor) GetAzureAudio(path string) error {
 		// 	return err
 		// }
 
-		query := p.azureDownloader.PrepareQueryWithRandomVoice(sentence, "0.0", true)
-		if _, err := p.azureDownloader.Fetch(
+		query := p.ttsDownloader.PrepareQueryWithRandomVoice(sentence, "0.0", true)
+		if _, err := p.ttsDownloader.Fetch(
 			context.Background(),
 			query,
 			audio.GetFilename(sentence)); err != nil {
