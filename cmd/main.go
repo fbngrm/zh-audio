@@ -11,12 +11,14 @@ import (
 
 var out = "./out"
 var in string
+var dest string
 var isDialog, isSentences, isPatterns, isClozes, isWords, isUseCases bool
 var key string
 var ignoreChars = []string{"!", "！", "？", "?", "，", ",", ".", "。", "", " ", "、"}
 
 func main() {
 	flag.StringVar(&in, "src", "", "source file")
+	flag.StringVar(&dest, "dest", "", "use case (-u) only: destination dir for id-keyed examples - output is moved directly here as {id}.mp3/{id}_segmented.mp3 instead of staying in ./out, and already-present files are skipped (resumable)")
 	flag.BoolVar(&isDialog, "d", false, "is this a dialog input")
 	flag.BoolVar(&isPatterns, "p", false, "is this a pattern input")
 	flag.BoolVar(&isSentences, "s", false, "is this a sentence input")
@@ -33,7 +35,7 @@ func main() {
 	if audioCacheDir == "" {
 		log.Fatal("Environment variable AUDIO_CACHE_DIR is not set")
 	}
-	ttsClient, err := audio.NewTTSClient(out, ignoreChars)
+	ttsClient, err := audio.NewTTSClient(out, ignoreChars, true)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -111,7 +113,7 @@ func main() {
 		}
 	}
 	if isUseCases {
-		useCaseProcessor := input.NewUseCaseProcessor(ttsClient, "../stanford-segmenter")
+		useCaseProcessor := input.NewUseCaseProcessor(ttsClient, "../stanford-segmenter", dest)
 		if err := useCaseProcessor.GenerateAudio(in); err != nil {
 			log.Fatal(err)
 		}

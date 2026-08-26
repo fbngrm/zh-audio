@@ -19,7 +19,7 @@ import (
 // clarity (matches the previous Azure prosody rate="0.7"); English narration
 // plays at normal speed, also matching the previous Azure client.
 const (
-	zhRatePercent = "-30%"
+	zhRatePercent = "-10%"
 	enRatePercent = "+0%"
 )
 
@@ -47,9 +47,11 @@ type TTSClient struct {
 	ignoreChars []string
 }
 
-func NewTTSClient(dir string, ignoreChars []string) (*TTSClient, error) {
-	if err := os.RemoveAll(dir); err != nil {
-		return nil, err
+func NewTTSClient(dir string, ignoreChars []string, wipe bool) (*TTSClient, error) {
+	if wipe {
+		if err := os.RemoveAll(dir); err != nil {
+			return nil, err
+		}
 	}
 	dir = filepath.Join(dir, "zh")
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -59,6 +61,13 @@ func NewTTSClient(dir string, ignoreChars []string) (*TTSClient, error) {
 		AudioDir:    dir,
 		ignoreChars: ignoreChars,
 	}, nil
+}
+
+// Exists reports whether filename has already been generated in AudioDir
+// (a non-empty file) - used to skip re-synthesizing audio on a resumed run.
+func (c *TTSClient) Exists(filename string) bool {
+	info, err := os.Stat(filepath.Join(c.AudioDir, filename))
+	return err == nil && info.Size() > 0
 }
 
 // we support 4 different voices only. zh-CN-XiaochenNeural and

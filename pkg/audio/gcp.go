@@ -45,6 +45,11 @@ func NewGCPClient(dir string) (*GCPDownloader, error) {
 
 func GetFilename(query string) string {
 	query = strings.ReplaceAll(query, " ", "")
+	// A "/" in the source text (e.g. an English translation like "Excuse me
+	// / I'm embarrassed.") would otherwise be read as a path separator,
+	// making the output writer try to create a directory that doesn't
+	// exist.
+	query = strings.ReplaceAll(query, "/", "-")
 	filename := ""
 	for _, c := range query {
 		filename += string(c)
