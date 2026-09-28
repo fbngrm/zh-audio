@@ -46,11 +46,10 @@ func NewUseCaseProcessor(downloader *audio.TTSClient, segmenterDir string, destD
 // into one file - the mobile app streams each variant independently.
 //
 // For id-keyed examples (destDir set and ex.ID non-empty), each file is
-// moved straight to destDir as {id}.mp3/{id}_segmented.mp3 as soon as it's
-// generated, and any file already present there is skipped rather than
-// regenerated - so an interrupted run can simply be re-run to resume. No
-// English narration is generated in this mode since phrase-app only wants
-// the Chinese normal/segmented pair.
+// moved straight to destDir as {id}.mp3/{id}_segmented.mp3/{id}_en.mp3 as
+// soon as it's generated, and any file already present there is skipped
+// rather than regenerated - so an interrupted run can simply be re-run to
+// resume.
 func (p *UseCaseProcessor) GenerateAudio(path string) error {
 	examples, err := loadUseCases(path)
 	if err != nil {
@@ -63,7 +62,8 @@ func (p *UseCaseProcessor) GenerateAudio(path string) error {
 
 		normalDest := ex.ID + ".mp3"
 		segmentedDest := ex.ID + "_segmented.mp3"
-		if useDest && p.existsInDest(normalDest) && p.existsInDest(segmentedDest) {
+		englishDest := ex.ID + "_en.mp3"
+		if useDest && p.existsInDest(normalDest) && p.existsInDest(segmentedDest) && p.existsInDest(englishDest) {
 			slog.Info("skipping, already generated", "id", ex.ID, "chinese", chinese)
 			continue
 		}
@@ -104,10 +104,16 @@ func (p *UseCaseProcessor) GenerateAudio(path string) error {
 			}
 		}
 
-		if !useDest {
+		if !useDest || !p.existsInDest(englishDest) {
 			englishQuery := p.ttsDownloader.PrepareEnglishQuery(ex.English, "0ms")
-			if _, err := p.ttsDownloader.Fetch(context.Background(), englishQuery, audio.GetFilename(ex.English)); err != nil {
+			outPath, err := p.ttsDownloader.Fetch(context.Background(), englishQuery, audio.GetFilename(ex.English))
+			if err != nil {
 				return err
+			}
+			if useDest {
+				if err := p.moveToDest(outPath, englishDest); err != nil {
+					return err
+				}
 			}
 		}
 
